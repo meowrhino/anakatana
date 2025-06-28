@@ -14,11 +14,11 @@ async function cargarProductos() {
 
     divProducto.innerHTML = `
       ${imagenHTML}
-      <div class="info">
+      <div class="home_titulo_precio">
         <p class="titulo">${producto.nombre}</p>
         <p class="precio">${producto.precio}€</p>
+        </div>
         <p class="descripcion">${producto.descripcion_corta}</p>
-      </div>
     `;
 
     // Evento click: lleva a la página de producto (puedes ajustar el link más adelante)
