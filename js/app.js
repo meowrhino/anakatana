@@ -7,24 +7,47 @@ async function cargarProductos() {
     const divProducto = document.createElement("div");
     divProducto.className = "producto";
 
-    // Imagen o placeholder
-    const imagenHTML = producto.img
-      ? `<img src="${producto.img}" alt="${producto.titulo}">`
-      : `<div class="no-data">no data</div>`;
+    const estaAgotado = producto.soldOut === "si" || producto.stock === 0;
+    const enRebajas = producto.rebajas === "si" && producto.precioRebajas;
+
+    // Imagen
+    let imagenHTML = "";
+    if (producto.img) {
+      if (estaAgotado) {
+        imagenHTML = `<img src="${producto.img}" alt="${producto.titulo}" class="img--soldout">`;
+      } else {
+        imagenHTML = `<img src="${producto.img}" alt="${producto.titulo}">`;
+      }
+    } else {
+      imagenHTML = `<div class="no-data">no data</div>`;
+    }
+
+    // Título
+    let tituloHTML = `<span class="titulo">${producto.titulo}</span>`;
+
+    // Precio
+    let precioHTML = "";
+    if (enRebajas) {
+      console.log("Producto en rebajas:", producto.titulo);
+      precioHTML = `<span class="precio precio--tachado">${producto.precio}€</span><span class="rebaja">${" " + producto.precioRebajas}€</span>`;
+    } else {
+      precioHTML = `<span class="precio">${producto.precio}€</span>`;
+    }
 
     divProducto.innerHTML = `
       ${imagenHTML}
       <div class="home_titulo_precio">
-        <span class="titulo">${producto.titulo}</span>
-        <span class="precio">${producto.precio}€</span>
+        ${tituloHTML}
+        ${precioHTML}
         </div>
         <p class="descripcion_corta">${producto.descripcion_corta}</p>
     `;
 
-    // Evento click: lleva a la página de producto (puedes ajustar el link más adelante)
-    divProducto.addEventListener("click", () => {
-      window.location.href = `producto.html?id=${producto.id}`;
-    });
+    if (!estaAgotado) {
+      divProducto.addEventListener("click", () => {
+        window.location.href = `producto.html?id=${producto.id}`;
+      });
+    }
 
     contenedor.appendChild(divProducto);
     activarDescripcionHover(divProducto); // 👈 ¡Aquí faltaba esto!
