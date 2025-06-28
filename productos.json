@@ -41,7 +41,7 @@
         "rebajas": "no",
         "precioRebajas": "",
         "stock": 50,
-        "soldOut": "no"
+        "soldOut": "si"
     },
     {
         "id": 2,
@@ -58,22 +58,22 @@
         "tallas": [
             {
                 "id": 1,
-                "descripcion": "S - 76cm cintura, 100cm largo"
+                "descripcion": "76cm cintura, 100cm largo"
             },
             {
                 "id": 2,
-                "descripcion": "M - 84cm cintura, 105cm largo"
+                "descripcion": "84cm cintura, 105cm largo"
             },
             {
                 "id": 3,
-                "descripcion": "L - 92cm cintura, 110cm largo"
+                "descripcion": "92cm cintura, 110cm largo"
             }
         ],
         "tallaModelo": 1,
         "rebajas": "no",
         "precioRebajas": "",
         "stock": 10,
-        "soldOut": "si"
+        "soldOut": "no"
     },
     {
         "id": 3,

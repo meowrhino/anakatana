@@ -56,12 +56,18 @@ a:hover {
   scroll-behavior: smooth;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 680px) {
   #productos-container {
     grid-template-columns: repeat(2, 1fr); /* en escritorio, 4 columnas */
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
+  #productos-container {
+    grid-template-columns: repeat(3, 1fr); /* en escritorio, 4 columnas */
+  }
+}
+
+@media (min-width: 1600px) {
   #productos-container {
     grid-template-columns: repeat(4, 1fr); /* en escritorio, 4 columnas */
   }
@@ -161,12 +167,13 @@ a:hover {
 .fixed-links-bottom {
   position: fixed;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: end;
 
   gap: 0.5rem;
   z-index: 1;
 }
+/*
 
 @media (max-width: 768px) {
   body[data-page-type="home"] .fixed-buttons-top,
@@ -174,6 +181,7 @@ a:hover {
     flex-direction: row;
   }
 }
+  */
 
 .fixed-buttons-top {
   top: 2vh;
@@ -265,4 +273,65 @@ a:hover {
   height: auto;
   object-fit: cover;
   margin-bottom: 1.5rem;
+}
+
+#producto-container {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2rem;
+
+  position: fixed;
+
+  /* padding: 10vh 5vh; */
+  top: 10vh; /* margen superior visible */
+  bottom: 10vh; /* margen inferior visible */
+  left: 5vh; /* margen lateral izquierdo */
+  right: 5vh; /* margen lateral derecho */
+
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+#producto-container .descripcion {
+  font-size: 1.5rem;
+}
+
+.producto-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.producto-img-container {
+  flex: 1;
+}
+
+.producto-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1rem ;
+}
+
+/* A partir de 768px (tablet y +): imagen a la izquierda, texto a la derecha */
+@media (min-width: 768px) {
+  .producto-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .producto-img-container {
+    max-width: 50%;
+  }
+
+  .producto-img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .producto-info {
+    padding-left: 3vw;
+  }
 }

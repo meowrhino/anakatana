@@ -11,27 +11,60 @@ window.addEventListener("DOMContentLoaded", async () => {
   try {
     const respuesta = await fetch("./productos.json");
     const productos = await respuesta.json();
-    const producto = productos.find(p => p.id === id);
+    const producto = productos.find((p) => p.id === id);
 
     if (!producto) {
       contenedor.innerHTML = "<p class='error'>Producto no disponible.</p>";
       return;
     }
 
-    const estaRebajado = producto.precio_original && producto.precio_original > producto.precio;
+    const estaRebajado =
+      producto.precio_original && producto.precio_original > producto.precio;
 
-    contenedor.innerHTML = `
-      <div class="producto-detalle">
-        <img src="${producto.img}" alt="${producto.titulo}" class="producto-img" />
-        <h1>${producto.titulo}</h1>
-        <p class="descripcion">${producto.descripcion_larga || producto.descripcion_corta || "Sin descripción"}</p>
+    //texto constante
+    const makingTime = `All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3`;
+
+    const tallas = producto.tallas?.length
+      ? `<p class="medidas">${producto.tallas
+          .map((t, i) => {
+            const supNumero = `<sup>${i + 1}</sup>`;
+            const esModelo = t.id === producto.tallaModelo;
+            const supModelo = esModelo ? `<sup>model</sup>` : "";
+            return `${supNumero}${t.descripcion}${supModelo}`;
+          })
+          .join(" <br> ")}</p>`
+      : "";
+
+    const coleccion = producto["colección"]
+      ? `<p class="coleccion">${producto["colección"]}<sup>collection</sup> </p>`
+      : "";
+
+    //principal
+contenedor.innerHTML = `
+  <div class="producto-layout">
+    <div class="producto-img-container">
+      <img src="${producto.img}" alt="${producto.titulo}" class="producto-img" />
+    </div>
+    <div class="producto-info">
+      <div class="home_titulo_precio">
+        <span class="titulo">${producto.titulo}</span>
         <p class="precio">
-          ${estaRebajado ? `<span class="precio--rebajado">${producto.precio}€</span>
-          <span class="precio--tachado">${producto.precio_original}€</span>` : `${producto.precio}€`}
+          ${
+            estaRebajado
+              ? `<span class="precio--rebajado">${producto.precio}€</span>
+              <span class="precio--tachado">${producto.precio_original}€</span>`
+              : `${producto.precio}€`
+          }
         </p>
-        <button class="btn-añadir-carrito">Añadir al carrito</button>
       </div>
-    `;
+      <p class="descripcion">${producto.descripcion}</p>
+      ${tallas}
+      ${coleccion}
+      <p class="making-time">${makingTime}</p>
+      <button class="btn-añadir-carrito">Añadir al carrito</button>
+    </div>
+  </div>
+`;
   } catch (e) {
     contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
   }
