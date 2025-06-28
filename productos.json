@@ -1,0 +1,102 @@
+[
+    {
+        "id": 1,
+        "img": "img/PUMPUMTSHIRT_1.jpg",
+        "titulo": "PUM-PUM T-Shirt",
+        "precio": "25,00",
+        "descripcion_corta": "the one and only last chance",
+        "descripcion": "the one and only last chance bby life goes fast af",
+        "peso": 150,
+        "tipo": [
+            "top"
+        ],
+        "colección": "pinchos",
+        "tallas": [
+            {
+                "id": 1,
+                "descripcion": "40cm width x 47cm length"
+            },
+            {
+                "id": 2,
+                "descripcion": "42cm width x 49cm length"
+            },
+            {
+                "id": 3,
+                "descripcion": "44cm width x 51cm length"
+            },
+            {
+                "id": 4,
+                "descripcion": "51cm width x 70cm length"
+            },
+            {
+                "id": 5,
+                "descripcion": "54cm width x 73cm length"
+            },
+            {
+                "id": 6,
+                "descripcion": "56cm width x 74cm length"
+            }
+        ],
+        "tallaModelo": 1,
+        "rebajas": "no",
+        "precioRebajas": "",
+        "stock": 50,
+        "soldOut": "no"
+    },
+    {
+        "id": 2,
+        "img": "img/T02PANTS_0.jpg",
+        "titulo": "T02",
+        "precio": "45,00",
+        "descripcion_corta": "the one and only last chance bby life goes fast af",
+        "descripcion": "Knitted fabric leftovers from factories in Vigo, Spain. Some hand-painted details in black. Lace from the stock of an old haberdashery in my hometown that closed due to retirement in Salamanca, Spain. Herrete made with the leftover thermo-sensitive cable from a small renovation in my old studio in Barcelona, Spain.",
+        "peso": 500,
+        "tipo": [
+            "bottom"
+        ],
+        "colección": "Invierno 2024",
+        "tallas": [
+            {
+                "id": 1,
+                "descripcion": "S - 76cm cintura, 100cm largo"
+            },
+            {
+                "id": 2,
+                "descripcion": "M - 84cm cintura, 105cm largo"
+            },
+            {
+                "id": 3,
+                "descripcion": "L - 92cm cintura, 110cm largo"
+            }
+        ],
+        "tallaModelo": 1,
+        "rebajas": "no",
+        "precioRebajas": "",
+        "stock": 10,
+        "soldOut": "no"
+    },
+    {
+        "id": 3,
+        "img": "img/01CUP_1.jpg",
+        "titulo": "01CUP",
+        "precio": "35,00",
+        "descripcion_corta": "secondhand grey cup customized with stone washing, metalic pieces, and hand-sewn left over fabric scarps from creating the collection.",
+        "descripcion": "secondhand grey cup customized with stone washing, metalic pieces, and hand-sewn left over fabric scarps from creating the collection.",
+        "peso": 100,
+        "tipo": [
+            "accesorio"
+        ],
+        "colección": "pincho",
+        "tallas": [
+            {
+                "id": 1,
+                "descripcion": "one-size"
+            }
+        ],
+        "tallaModelo": 1,
+        "rebajas": "si",
+        "precioRebajas": "3,00",
+        "stock": 20,
+        "soldOut": "no"
+    }
+]

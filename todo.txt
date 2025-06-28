@@ -1,0 +1,10 @@
+	•	Integración con un frontend que consuma estos endpoints.
+	•	Implementar el sistema de pagos con Stripe, gestionando el cálculo total del carrito (productos, envíos, impuestos).
+	•	Testeo automático para robustecer el proyecto (opcional pero recomendado).
+	•	Desplegar la aplicación en Render para hacerlo accesible desde Internet.
+
+    el fondo que aparezca random en la pagina
+    que el raton sea custom hehe
+    que las colecciones se creen a partir de lo que haya escrito ana katana
+    como se ven los articulos soldout (grayscale) (o inverted) (la imagen digo eh)
+    y los articulos en rebajas (igual un texto? como un sup? y que el precio esté el rebajado y el original en un sup tachado)
