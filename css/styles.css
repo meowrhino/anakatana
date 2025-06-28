@@ -1,5 +1,12 @@
+/*GENERAL Y RESET*/
+
 :root {
   --grisAnaKtana: #494b49;
+}
+
+* {
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -12,12 +19,6 @@ body {
 
   overflow-x: hidden;
 }
-
-* {
-  margin: 0;
-  padding: 0;
-}
-
 a {
   text-decoration: none;
   color: inherit; /* hereda el color del body */
@@ -37,6 +38,8 @@ a:hover {
     color: var(--grisAnaKtana);
   }
 }
+
+/*CONTAINER HOME*/
 
 #productos-container {
   display: grid;
@@ -61,7 +64,7 @@ a:hover {
     grid-template-columns: repeat(2, 1fr); /* en escritorio, 4 columnas */
   }
 }
-@media (min-width: 1280px) {
+@media (min-width: 960px) {
   #productos-container {
     grid-template-columns: repeat(3, 1fr); /* en escritorio, 4 columnas */
   }
@@ -73,9 +76,41 @@ a:hover {
   }
 }
 
+#productos-container::-webkit-scrollbar {
+  width: 1vh;
+}
+#productos-container::-webkit-scrollbar-thumb {
+  background: var(--grisAnaKtana);
+}
+
+/*PRODUCTO ITEM*/
+
 .producto {
   position: relative;
   cursor: pointer;
+}
+
+.producto img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.img-wrapper {
+  position: relative;
+}
+
+.img--soldout {
+  filter: grayscale(100%);
+}
+
+.descripcion_corta {
+  display: none;
+}
+
+.producto:hover .descripcion_corta {
+  display: block;
 }
 
 .home_titulo_precio {
@@ -97,23 +132,98 @@ a:hover {
   margin-left: auto;
 }
 
+.soldout-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: black;
+
+  font-size: 4rem;
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  white-space: nowrap; /* 👈 fuerza que no se divida */
+  pointer-events: none;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: 0.1em;
+}
+
+/*no me supergusta que se pierda*/
+
+@media (max-width: 480px) {
+  .soldout-label {
+    font-size: 3rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+/*DESCUENTOS & diversión*/
+
+.corner-label {
+  position: absolute;
+  font-size: 0.7rem;
+  background: none;
+  color: black;
+  padding: 2rem 1.5rem;
+  text-transform: uppercase;
+  font-family: "IBM Plex Sans", sans-serif;
+  animation: parpadeo 1.5s ease-in-out infinite;
+  opacity: 0.9;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes parpadeo {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.top-left {
+  top: 0;
+  left: 0;
+}
+.top-right {
+  top: 0;
+  right: 0;
+}
+.bottom-left {
+  bottom: 0;
+  left: 0;
+}
+.bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+/*tachar precio*/
+
 .home_titulo_precio .precio--tachado {
   text-decoration: line-through;
 }
 
-.producto img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
+.precio--tachado {
+  position: relative;
+  display: inline-block;
+  opacity: 0.5;
+  animation: brilloTachado 1s ease-in-out infinite;
 }
 
-#productos-container::-webkit-scrollbar {
-  width: 1vh;
+@keyframes brilloTachado {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
-#productos-container::-webkit-scrollbar-thumb {
-  background: var(--grisAnaKtana);
-}
+
+/*LOGO BACKGROUND*/
 
 #logo-texture {
   position: fixed;
@@ -134,34 +244,26 @@ a:hover {
   z-index: -1;
 }
 
-.descripcion_corta {
-  display: none;
+#logo-texture--about {
+  position: fixed;
+  top: -450px;
+  left: -730px;
+  scale: 1.3;
+
+  min-width: 1813px;
+  min-height: 1418px;
+
+  opacity: 0.4; /* como textura sutil */
+
+  background-image: url("../root/hifasLogo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  pointer-events: none;
+  z-index: -1;
 }
 
-.producto:hover .descripcion_corta {
-  display: block;
-}
-
-.img--soldout {
-  filter: grayscale(100%);
-}
-
-.precio--tachado {
-  position: relative;
-  display: inline-block;
-  opacity: 0.5;
-  animation: brilloTachado 1s ease-in-out infinite;
-}
-
-@keyframes brilloTachado {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
+/*BOTONES FIJOS*/
 
 .fixed-buttons-top,
 .fixed-links-bottom {
@@ -173,88 +275,35 @@ a:hover {
   gap: 0.5rem;
   z-index: 1;
 }
-/*
-
-@media (max-width: 768px) {
-  body[data-page-type="home"] .fixed-buttons-top,
-  body[data-page-type="home"] .fixed-links-bottom {
-    flex-direction: row;
-  }
-}
-  */
 
 .fixed-buttons-top {
-  top: 2vh;
-  right: 2vh;
+  top: 3vh;
+  right: 3vh;
 }
 
 .fixed-links-bottom {
-  bottom: 2vh;
-  right: 2vh;
+  bottom: 3vh;
+  right: 3vh;
 }
 
-.img-wrapper {
-  position: relative;
+/*PRODUCTO DETALLE*/
+
+#producto-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  position: fixed;
+  top: 10vh;
+  bottom: 10vh;
+  left: 5vh;
+  right: 5vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
-.soldout-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: black;
-
-  font-size: 4rem;
-  text-transform: uppercase;
-  padding: 0.4rem 0.8rem;
-  white-space: nowrap;       /* 👈 fuerza que no se divida */
-  pointer-events: none;
-  font-family: "IBM Plex Sans", sans-serif;
-  letter-spacing: 0.1em;
-}
-
-@media (max-width: 568px) {
-  .soldout-label {
-    font-size: 3rem;
-    padding: 0.3rem 0.6rem;
-  }
-}
-
-.corner-label {
-  position: absolute;
-  font-size: 0.7rem;
-  background: none;
-  color: black;
-  padding: 2rem 1.5rem;
-  text-transform: uppercase;
-  font-family: "IBM Plex Sans", sans-serif;
-  animation: parpadeo 1.5s ease-in-out infinite;
-  opacity: 0.9;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.top-left {
-  top: 0;
-  left: 0;
-}
-.top-right {
-  top: 0;
-  right: 0;
-}
-.bottom-left {
-  bottom: 0;
-  left: 0;
-}
-.bottom-right {
-  bottom: 0;
-  right: 0;
-}
-
-
-@keyframes parpadeo {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 1; }
+#producto-container .descripcion {
+  font-size: 1.5rem;
 }
 
 .producto-detalle {
@@ -275,46 +324,36 @@ a:hover {
   margin-bottom: 1.5rem;
 }
 
-#producto-container {
-  display: flex;
-  flex-direction: column;
-
-  gap: 2rem;
-
-  position: fixed;
-
-  /* padding: 10vh 5vh; */
-  top: 10vh; /* margen superior visible */
-  bottom: 10vh; /* margen inferior visible */
-  left: 5vh; /* margen lateral izquierdo */
-  right: 5vh; /* margen lateral derecho */
-
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-#producto-container .descripcion {
-  font-size: 1.5rem;
-}
-
 .producto-layout {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  max-width: 1400px;
+  justify-content: center;
 }
 
-.producto-img-container {
+.producto-img-container,
+.producto-info {
   flex: 1;
 }
 
 .producto-info {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: 1rem ;
+  gap: 1rem;
+  padding-left: 3vw;
 }
 
-/* A partir de 768px (tablet y +): imagen a la izquierda, texto a la derecha */
+@media (min-width: 600px) {
+  .producto-layout {
+    flex-direction: row;
+  }
+
+  .producto-img-container {
+    flex: 1.2;
+  }
+}
+
 @media (min-width: 768px) {
   .producto-layout {
     flex-direction: row;
@@ -322,16 +361,21 @@ a:hover {
   }
 
   .producto-img-container {
-    max-width: 50%;
+    flex: 0.8;
   }
+}
 
-  .producto-img {
-    width: 100%;
-    height: auto;
-    display: block;
+@media (min-width: 1024px) {
+  .producto-img-container {
+    flex: 0.6;
   }
+}
 
-  .producto-info {
-    padding-left: 3vw;
-  }
+/*ABOUT*/
+
+#about-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
 }
