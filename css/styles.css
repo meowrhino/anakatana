@@ -9,6 +9,8 @@ body {
 
   background-color: black;
   color: white;
+
+  overflow-x: hidden;
 }
 
 * {
@@ -123,7 +125,7 @@ a:hover {
   background-repeat: no-repeat;
 
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 .descripcion_corta {
@@ -166,9 +168,9 @@ a:hover {
   z-index: 1;
 }
 
-@media (min-width: 768px) {
-  .fixed-buttons-top,
-  .fixed-links-bottom {
+@media (max-width: 768px) {
+  body[data-page-type="home"] .fixed-buttons-top,
+  body[data-page-type="home"] .fixed-links-bottom {
     flex-direction: row;
   }
 }
@@ -193,7 +195,7 @@ a:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   background: black;
-  color: white;
+
   font-size: 4rem;
   text-transform: uppercase;
   padding: 0.4rem 0.8rem;
@@ -201,6 +203,13 @@ a:hover {
   pointer-events: none;
   font-family: "IBM Plex Sans", sans-serif;
   letter-spacing: 0.1em;
+}
+
+@media (max-width: 568px) {
+  .soldout-label {
+    font-size: 3rem;
+    padding: 0.3rem 0.6rem;
+  }
 }
 
 .corner-label {
@@ -238,4 +247,22 @@ a:hover {
 @keyframes parpadeo {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 1; }
+}
+
+.producto-detalle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 500px;
+  margin: 10vh auto;
+  padding: 0 2rem;
+  text-align: left;
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+.producto-img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  margin-bottom: 1.5rem;
 }

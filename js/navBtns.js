@@ -21,7 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
     linksAbajo.innerHTML += `
       <a href="about.html" class="boton-fijo">about</a>
     `;
-  } else {
+  } 
+  
+  if (pageType !== "home"){
     linksAbajo.innerHTML += `
       <a href="index.html" class="boton-fijo">home</a>
     `;
