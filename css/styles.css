@@ -18,15 +18,15 @@ body {
 
 #productos-container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* por defecto, 2 columnas */
+  grid-template-columns: repeat(1, 1fr); /* por defecto, 2 columnas */
   grid-auto-flow: row; /* default, explícito */
-  gap: 20px;
+  gap: 2rem;
 
   position: fixed;
 
   /* padding: 10vh 5vh; */
   top: 10vh; /* margen superior visible */
-  bottom: 5vh; /* margen inferior visible */
+  bottom: 10vh; /* margen inferior visible */
   left: 5vh; /* margen lateral izquierdo */
   right: 5vh; /* margen lateral derecho */
 
@@ -34,6 +34,11 @@ body {
   scroll-behavior: smooth;
 }
 
+@media (min-width: 768px) {
+  #productos-container {
+    grid-template-columns: repeat(2, 1fr); /* en escritorio, 4 columnas */
+  }
+}
 @media (min-width: 1024px) {
   #productos-container {
     grid-template-columns: repeat(4, 1fr); /* en escritorio, 4 columnas */
@@ -46,9 +51,20 @@ body {
 }
 
 .home_titulo_precio {
-  font-family: IBM Plex Sans, sans-serif;
+  font-family: "Noto Serif JP", serif;
+  font-weight: 400;
+
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
+
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.home_titulo_precio .precio {
+  margin-left: auto;
 }
 
 .producto img {
@@ -58,10 +74,38 @@ body {
   object-fit: cover;
 }
 
+
 #productos-container::-webkit-scrollbar {
   width: 1vh;
 }
-
 #productos-container::-webkit-scrollbar-thumb {
   background: var(--grisAnaKtana);
+} 
+
+#logo-texture {
+  position: fixed;
+  top: 100px;
+  left: -1000px;
+
+  min-width: 1813px;
+  min-height: 1418px;
+
+  background-image: url("../root/hifasLogo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  background-position: center;
+  opacity: 0.4; /* como textura sutil */
+
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+.descripcion_corta {
+  display: none;
+}
+
+.producto:hover .descripcion_corta {
+  display: block;
 }

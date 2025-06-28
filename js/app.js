@@ -9,16 +9,16 @@ async function cargarProductos() {
 
     // Imagen o placeholder
     const imagenHTML = producto.img
-      ? `<img src="${producto.img}" alt="${producto.nombre}">`
+      ? `<img src="${producto.img}" alt="${producto.titulo}">`
       : `<div class="no-data">no data</div>`;
 
     divProducto.innerHTML = `
       ${imagenHTML}
       <div class="home_titulo_precio">
-        <p class="titulo">${producto.nombre}</p>
-        <p class="precio">${producto.precio}€</p>
+        <span class="titulo">${producto.titulo}</span>
+        <span class="precio">${producto.precio}€</span>
         </div>
-        <p class="descripcion">${producto.descripcion_corta}</p>
+        <p class="descripcion_corta">${producto.descripcion_corta}</p>
     `;
 
     // Evento click: lleva a la página de producto (puedes ajustar el link más adelante)
@@ -27,6 +27,7 @@ async function cargarProductos() {
     });
 
     contenedor.appendChild(divProducto);
+    activarDescripcionHover(divProducto); // 👈 ¡Aquí faltaba esto!
   });
 }
 
@@ -54,6 +55,7 @@ function actualizarCarrito() {
   });
 }
 
+/*
 document.getElementById("hacer-pedido").addEventListener("click", async () => {
   if (carrito.length === 0) {
     alert("El carrito está vacío.");
@@ -82,3 +84,16 @@ document.getElementById("hacer-pedido").addEventListener("click", async () => {
     alert("Hubo un error al realizar el pedido.");
   }
 });
+*/
+
+function activarDescripcionHover(productoElemento) {
+  const descripcion = productoElemento.querySelector(".descripcion_corta");
+
+  productoElemento.addEventListener("mouseenter", () => {
+    descripcion.classList.add("show");
+  });
+
+  productoElemento.addEventListener("mouseleave", () => {
+    descripcion.classList.remove("show");
+  });
+}
