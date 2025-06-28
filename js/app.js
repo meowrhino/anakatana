@@ -11,12 +11,40 @@ async function cargarProductos() {
     const enRebajas = producto.rebajas === "si" && producto.precioRebajas;
 
     // Imagen
+    // Imagen
     let imagenHTML = "";
     if (producto.img) {
+      const saleCorners = enRebajas
+        ? `
+      <span class="corner-label top-left">SALE</span>
+      <span class="corner-label top-right">SALE</span>
+      <span class="corner-label bottom-left">SALE</span>
+      <span class="corner-label bottom-right">SALE</span>
+    `
+        : "";
+
       if (estaAgotado) {
-        imagenHTML = `<img src="${producto.img}" alt="${producto.titulo}" class="img--soldout">`;
+        imagenHTML = `
+      <div class="img-wrapper soldout ${enRebajas ? "en-rebajas" : ""}">
+        <img src="${producto.img}" alt="${
+          producto.titulo
+        }" class="img--soldout">
+        <span class="soldout-label" style="transform: translate(-50%, -50%) rotate(${(
+          Math.random() * 50 -
+          25
+        ).toFixed(2)}deg);">
+  sold out
+</span>
+        ${saleCorners}
+      </div>
+    `;
       } else {
-        imagenHTML = `<img src="${producto.img}" alt="${producto.titulo}">`;
+        imagenHTML = `
+      <div class="img-wrapper ${enRebajas ? "en-rebajas" : ""}">
+        <img src="${producto.img}" alt="${producto.titulo}">
+        ${saleCorners}
+      </div>
+    `;
       }
     } else {
       imagenHTML = `<div class="no-data">no data</div>`;
@@ -28,8 +56,9 @@ async function cargarProductos() {
     // Precio
     let precioHTML = "";
     if (enRebajas) {
-      console.log("Producto en rebajas:", producto.titulo);
-      precioHTML = `<span class="precio precio--tachado">${producto.precio}€</span><span class="rebaja">${" " + producto.precioRebajas}€</span>`;
+      precioHTML = `<span class="precio precio--tachado">${
+        producto.precio
+      }€</span><span class="rebaja">${" " + producto.precioRebajas}€</span>`;
     } else {
       precioHTML = `<span class="precio">${producto.precio}€</span>`;
     }

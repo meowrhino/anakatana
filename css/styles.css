@@ -182,3 +182,60 @@ a:hover {
   bottom: 2vh;
   right: 2vh;
 }
+
+.img-wrapper {
+  position: relative;
+}
+
+.soldout-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: black;
+  color: white;
+  font-size: 4rem;
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  white-space: nowrap;       /* 👈 fuerza que no se divida */
+  pointer-events: none;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.corner-label {
+  position: absolute;
+  font-size: 0.7rem;
+  background: none;
+  color: black;
+  padding: 2rem 1.5rem;
+  text-transform: uppercase;
+  font-family: "IBM Plex Sans", sans-serif;
+  animation: parpadeo 1.5s ease-in-out infinite;
+  opacity: 0.9;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.top-left {
+  top: 0;
+  left: 0;
+}
+.top-right {
+  top: 0;
+  right: 0;
+}
+.bottom-left {
+  bottom: 0;
+  left: 0;
+}
+.bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+
+@keyframes parpadeo {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
