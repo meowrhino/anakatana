@@ -16,6 +16,26 @@ body {
   padding: 0;
 }
 
+a {
+  text-decoration: none;
+  color: inherit; /* hereda el color del body */
+}
+
+a:hover {
+  color: var(--grisAnaKtana);
+  animation: pumpum 1s ease-in-out infinite;
+}
+
+@keyframes pumpum {
+  0%,
+  100% {
+    color: white;
+  }
+  50% {
+    color: var(--grisAnaKtana);
+  }
+}
+
 #productos-container {
   display: grid;
   grid-template-columns: repeat(1, 1fr); /* por defecto, 2 columnas */
@@ -126,7 +146,8 @@ body {
 }
 
 @keyframes brilloTachado {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
   }
   50% {
@@ -134,3 +155,30 @@ body {
   }
 }
 
+.fixed-buttons-top,
+.fixed-links-bottom {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+
+  gap: 0.5rem;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .fixed-buttons-top,
+  .fixed-links-bottom {
+    flex-direction: row;
+  }
+}
+
+.fixed-buttons-top {
+  top: 2vh;
+  right: 2vh;
+}
+
+.fixed-links-bottom {
+  bottom: 2vh;
+  right: 2vh;
+}

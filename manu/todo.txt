@@ -1,4 +1,77 @@
-	•	Integración con un frontend que consuma estos endpoints.
+	🥇 ETAPA 1: Lo esencial para navegar la tienda
+
+Objetivo: tener una tienda navegable, visual y funcional aunque sea sin pago todavía.
+	1.	producto.html
+	•	Mostrar detalles del producto según ?id=...
+	•	Cargar los datos desde el JSON o backend.
+	•	Mostrar título, imagen, descripción completa, precio, rebajas si hay, botón “Añadir al carrito”.
+	2.	about.html
+	•	Contenido libre. Imagen de Ana, texto bonito, link a RRSS, etc.
+	•	Puede usar el mismo CSS base.
+	3.	Popup de carrito
+	•	Modal fijo a la derecha o pantalla completa en móvil.
+	•	Mostrar lista de productos del carrito, totales y botón “PAGAR”.
+	•	Añadir botón en la esquina superior derecha para abrirlo.
+
+⸻
+
+🥈 ETAPA 2: Funcionalidad completa
+
+Objetivo: permitir realizar pedidos y registrar stock.
+	4.	Conectar backend en Render
+	•	Subir index.js y productos.json.
+	•	Actualizar fetch("./productos.json") por fetch("https://backend.render.com/productos").
+	5.	Botón “PAGAR” funcional
+	•	Hacer que recoja el carrito y lo envíe vía POST a /pedido.
+	•	Mostrar confirmación (alerta o modal).
+	6.	Stock Manager para Ana
+	•	Página secreta (admin.html) con formulario de edición y subida.
+	•	Mostrar lista editable de productos y/o botón para subir uno nuevo.
+	•	Subida de foto = base64 o usar un servicio externo (imgur, Cloudinary).
+	•	Conexión al endpoint /editar-stock.
+
+⸻
+
+🥉 ETAPA 3: Mejoras de experiencia y estética
+
+Objetivo: que la tienda sea mágica y divertida.
+	7.	Animaciones de aparición en scroll
+	•	Cada .producto aparece con efecto (e.g. fade in + scale).
+	•	Usar IntersectionObserver para activarlo al entrar en viewport.
+	8.	Filtro arriba a la derecha
+	•	Selector desplegable o botones: por categoría, stock, rebajas.
+	•	Orden por:
+	•	Categoría → orden alfabético
+	•	Stock → mayor disponibilidad primero
+	•	Rebajas → precio rebajado ascendente
+	9.	Animaciones al añadir al carrito
+	•	Efecto visual al hacer click en un producto (por ejemplo, volar la imagen al carrito).
+
+⸻
+
+🧪 ETAPA 4: Pagos
+
+Objetivo: pruebas con cobros reales.
+	10.	Pruebas con Stripe
+
+	•	Registrar cuenta.
+	•	Crear link de checkout rápido o integrar botón con Stripe.js.
+	•	Cálculo de totales, gastos de envío, comisión (puede ir en el popup de carrito).
+
+	11.	Panel secreto seguro
+
+	•	Como dices: si Ana solo tiene el link, es suficiente por ahora.
+	•	(En el futuro podrías añadir clave o auth básica si hace falta.)
+
+⸻
+
+¿Quieres que empecemos ahora con el producto.html? Puedo montarte el esqueleto base en un minuto 🏗️
+    
+    
+    
+    
+    
+    •	Integración con un frontend que consuma estos endpoints.
 	•	Implementar el sistema de pagos con Stripe, gestionando el cálculo total del carrito (productos, envíos, impuestos).
 	•	Testeo automático para robustecer el proyecto (opcional pero recomendado).
 	•	Desplegar la aplicación en Render para hacerlo accesible desde Internet.

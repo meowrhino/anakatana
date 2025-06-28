@@ -6,8 +6,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const logoWidth = 1813;
   const logoHeight = 1418;
 
-  const randomX = Math.random() * vw * 1.35;
-  const randomY = Math.random() * vh * 1.35;
+  const randomX = Math.random() * vw * 1.30;
+  const randomY = Math.random() * vh * 1.30;
 
   const randomOpacity = 0.15 + Math.random() * 0.35; // 0.15 - 0.5
   const randomScale = 0.7 + Math.random() * 0.5;     // 0.7 - 1.2

@@ -66,6 +66,7 @@ function agregarAlCarrito(id, nombre) {
     carrito.push({ id, nombre, cantidad: 1 });
   }
   actualizarCarrito();
+  actualizarContadorCarrito(); // 👈 se actualiza el número arriba
 }
 
 function actualizarCarrito() {
@@ -119,4 +120,12 @@ function activarDescripcionHover(productoElemento) {
   productoElemento.addEventListener("mouseleave", () => {
     descripcion.classList.remove("show");
   });
+}
+
+function actualizarContadorCarrito() {
+  const total = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+  const contador = document.getElementById("carrito-count");
+  if (contador) {
+    contador.textContent = total;
+  }
 }
