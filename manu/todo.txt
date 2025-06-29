@@ -80,3 +80,9 @@ Objetivo: pruebas con cobros reales.
     que las colecciones se creen a partir de lo que haya escrito ana katana
     como se ven los articulos soldout (grayscale) (o inverted) (la imagen digo eh)
     y los articulos en rebajas (igual un texto? como un sup? y que el precio esté el rebajado y el original en un sup tachado)
+
+
+
+
+
+	revisar el responsive del produycto (de 480px a 680px de width que la imagen y el precio y titulo esten arriba hy el resto abajo?)
