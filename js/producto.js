@@ -26,16 +26,27 @@ window.addEventListener("DOMContentLoaded", async () => {
     const makingTime = `All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3`;
 
     // Tallas
-    const tallas = producto.tallas?.length
-      ? `<p class="medidas">${producto.tallas
-          .map((t, i) => {
-            const supNumero = `<sup>${i + 1}</sup>`;
-            const esModelo = t.id === producto.tallaModelo;
-            const supModelo = esModelo ? `<sup>model</sup>` : "";
-            return `${supNumero}${t.descripcion}${supModelo}`;
-          })
-          .join(" <br> ")}</p>`
-      : "";
+    let tallas = "";
+    if (producto.tallas?.length === 1) {
+      const t = producto.tallas[0];
+      const esModelo = t.id === producto.tallaModelo;
+      const supModelo = esModelo ? `<sup>model</sup>` : "";
+      tallas = `<p class="medidas">size: ${t.descripcion}</p>`;
+    } else if (producto.tallas?.length > 1) {
+      tallas = `
+  <details class="tallas-acordeon">
+    <summary>sizes</summary>
+    <div class="tallas-lista">
+      ${producto.tallas
+        .map((t, i) => {
+          const supModelo =
+            t.id === producto.tallaModelo ? `<sup>model</sup>` : "";
+          return `<p>${t.descripcion} ${supModelo}</p>`;
+        })
+        .join("")}
+    </div>
+  </details>`;
+    }
 
     // Colección
     const coleccion = producto["colección"]
@@ -78,4 +89,43 @@ window.addEventListener("DOMContentLoaded", async () => {
   } catch (e) {
     contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const acordeon = document.querySelector(".tallas-acordeon");
+  const texto = acordeon?.querySelector(".summary-text");
+
+  if (acordeon && texto) {
+    const updateText = () => {
+      texto.textContent = acordeon.open ? "hide sizes" : "see sizes";
+    };
+    acordeon.addEventListener("toggle", updateText);
+    updateText(); // inicial
+  }
+});
+
+// POPUP de imagen al hacer click
+document.addEventListener("DOMContentLoaded", () => {
+  const img = document.querySelector(".producto-img");
+  if (!img) return;
+
+  // Crear el overlay
+  const overlay = document.createElement("div");
+  overlay.id = "imagen-popup";
+  overlay.innerHTML = `
+    <div class="popup-img-wrapper">
+      <img src="${img.src}" alt="${img.alt}">
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Abrir al hacer click
+  img.addEventListener("click", () => {
+    overlay.classList.add("visible");
+  });
+
+  // Cerrar al hacer click fuera o en la imagen
+  overlay.addEventListener("click", () => {
+    overlay.classList.remove("visible");
+  });
 });
