@@ -86,3 +86,6 @@ Objetivo: pruebas con cobros reales.
 
 
 	revisar el responsive del produycto (de 480px a 680px de width que la imagen y el precio y titulo esten arriba hy el resto abajo?)
+
+	2 columnas home
+	test foto como fondo 

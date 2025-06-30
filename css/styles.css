@@ -9,10 +9,15 @@
   padding: 0;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: Helvetica, Arial, sans-serif;
-
-  height: 100%;
 
   background-color: black;
   color: white;
@@ -43,7 +48,7 @@ a:hover {
 
 #productos-container {
   display: grid;
-  grid-template-columns: repeat(1, 1fr); /* por defecto, 2 columnas */
+  grid-template-columns: repeat(2, 1fr); /* por defecto, 2 columnas */
   grid-auto-flow: row; /* default, explícito */
   gap: 2rem;
 
@@ -59,12 +64,7 @@ a:hover {
   scroll-behavior: smooth;
 }
 
-@media (min-width: 680px) {
-  #productos-container {
-    grid-template-columns: repeat(2, 1fr); /* en escritorio, 4 columnas */
-  }
-}
-@media (min-width: 960px) {
+@media (min-width: 768px) {
   #productos-container {
     grid-template-columns: repeat(3, 1fr); /* en escritorio, 4 columnas */
   }
@@ -101,9 +101,45 @@ a:hover {
   position: relative;
 }
 
+/*no se si le gustaba a ana o no
+
 .img--soldout {
   filter: grayscale(100%);
+}*/
+
+.soldout-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* no bloquea el hover del producto */
+  z-index: 5;
 }
+
+.producto:hover .soldout-overlay {
+  opacity: 0;
+}
+
+.soldout-label-central {
+  font-size: 0.8rem;
+  font-family: "IBM Plex Sans", sans-serif;
+  color: var(--grisAnaKtana);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/*y esto es el antiguo
+.corner-label.soldout-label {
+  background-color: #aaa;
+  color: white;
+  font-weight: bold;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  text-transform: uppercase;
+}*/
 
 .descripcion_corta {
   display: none;
@@ -391,5 +427,53 @@ a:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2rem;
+  /* height: 100vh; Esto es lo que necesitas */
+
+  font-size: clamp(0.82rem, 1.2vw, 0.95rem);
+
+  max-width: 380px;
+}
+
+@media (max-width: 320px) {
+  #about-container {
+    padding: 5vh 3vh;
+    font-size: 0.75rem;
+    gap: 1.5rem;
+  }
+
+  .aboutLogo {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 444px) {
+  body[data-page-type="about"] {
+    overflow: hidden; /* bloquea el scroll del body */
+  }
+
+  #about-container {
+    position: fixed;
+
+    padding: 10vh 5vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+}
+
+
+.aboutLogo {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+body[data-page-type="about"] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
