@@ -1,7 +1,7 @@
 window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get("id"));
-  const contenedor = document.getElementById("producto-container");
+  const contenedor = document.getElementById("detalle-producto");
 
   if (!id) {
     contenedor.innerHTML = "<p class='error'>Producto no encontrado.</p>";

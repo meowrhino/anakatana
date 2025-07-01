@@ -1,7 +1,7 @@
 async function cargarProductos() {
   const respuesta = await fetch("./productos.json");
   const productos = await respuesta.json();
-  const contenedor = document.getElementById("productos-container");
+  const contenedor = document.getElementById("galeria-productos");
 
   renderProductos(productos, contenedor);
 }
@@ -81,9 +81,15 @@ function renderProductos(productos, contenedor) {
 
     // Título y precio
     const tituloHTML = `<span class="titulo">${producto.titulo}</span>`;
-    const precioHTML = enRebajas
-      ? `<span class="precio precio--tachado">${producto.precio}€</span><span class="rebaja"> ${producto.precioRebajas}€</span>`
-      : `<span class="precio">${producto.precio}€</span>`;
+    const precioHTML = `
+  <div class="precios">
+    ${
+      enRebajas
+        ? `<span class="precio--tachado">${producto.precio}€</span>
+           <span class="precio--rebajado">${producto.precioRebajas}€</span>`
+        : `<span class="precio">${producto.precio}€</span>`
+    }
+  </div>`;
 
     divProducto.innerHTML = `
       ${imagenHTML}
