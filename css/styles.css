@@ -472,12 +472,11 @@ body[data-page-type="product"] .precios {
 
   .producto-img {
     max-width: 100%;
-    overflow-y: auto;
   }
 
   .producto-info {
-    height: 34vh;
-    overflow-y: auto;
+    /* height: 34vh;
+    overflow-y: auto; */
     padding: 1rem;
     display: flex;
     flex-direction: column;
