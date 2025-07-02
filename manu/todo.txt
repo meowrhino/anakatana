@@ -89,3 +89,8 @@ Objetivo: pruebas con cobros reales.
 
 	2 columnas home
 	test foto como fondo 
+
+	✅ Te dejo preparado ahora el esqueleto de la función abrirCarrito() dentro de app.js.
+Luego, cuando terminemos esta parte, te recordaré que nos queda pendiente:
+	•	Reordenar los botones en producto.html.
+	•	Ajustar la imagen y su layout.

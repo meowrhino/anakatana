@@ -1,0 +1,8 @@
+const tarifasEnvio = {
+  españa:    { pequeño: 5, mediano: 7, grande: 9 },
+  islas:     { pequeño: 6, mediano: 9, grande: 12 },
+  europa:    { pequeño: 9, mediano: 12, grande: 16 },
+  eeuu:      { pequeño: 14, mediano: 18, grande: 25 },
+  latam:     { pequeño: 12, mediano: 16, grande: 22 },
+  japon:     { pequeño: 16, mediano: 20, grande: 28 }
+};

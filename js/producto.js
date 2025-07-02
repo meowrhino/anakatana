@@ -1,3 +1,15 @@
+let producto = null;
+
+function obtenerPrecio(producto) {
+  const base =
+    producto.rebajas === "si" && producto.precioRebajas
+      ? producto.precioRebajas
+      : producto.precio;
+  return parseFloat(base.replace(",", "."));
+}
+
+// // // // // const talla = document.getElementById("select-talla")?.value || null;
+
 window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get("id"));
@@ -11,7 +23,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   try {
     const respuesta = await fetch("./productos.json");
     const productos = await respuesta.json();
-    const producto = productos.find((p) => p.id === id);
+    producto = productos.find((p) => p.id === id);
 
     if (!producto) {
       contenedor.innerHTML = "<p class='error'>Producto no disponible.</p>";
@@ -25,27 +37,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     // Texto constante
     const makingTime = `All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3`;
 
-    // Tallas
     let tallas = "";
-    if (producto.tallas?.length === 1) {
-      const t = producto.tallas[0];
-      const esModelo = t.id === producto.tallaModelo;
-      const supModelo = esModelo ? `<sup>model</sup>` : "";
-      tallas = `<p class="medidas">size: ${t.descripcion}</p>`;
-    } else if (producto.tallas?.length > 1) {
-      tallas = `
-  <details class="tallas-acordeon">
-    <summary>sizes</summary>
-    <div class="tallas-lista">
-      ${producto.tallas
-        .map((t, i) => {
-          const supModelo =
-            t.id === producto.tallaModelo ? `<sup>model</sup>` : "";
-          return `<p>${t.descripcion} ${supModelo}</p>`;
+    if (producto.tallas?.length) {
+      const opciones = producto.tallas
+        .map((t) => {
+          const modelo =
+            t.id === producto.tallaModelo ? " (seen in model)" : "";
+          return `<option value="${t.descripcion}">${t.descripcion}${modelo}</option>`;
         })
-        .join("")}
+        .join("");
+
+      const extraOption =
+        producto.tallas.length > 1
+          ? `<option value="custom">custom (send mail)</option>`
+          : "";
+
+      tallas = `
+    <div class="talla-wrapper">
+      <label for="select-talla">size</label>
+      <select id="select-talla">
+        ${opciones}
+        ${extraOption}
+      </select>
     </div>
-  </details>`;
+  `;
     }
 
     // Colección
@@ -89,6 +104,26 @@ window.addEventListener("DOMContentLoaded", async () => {
   } catch (e) {
     contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
   }
+
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-añadir-carrito")) {
+      const id = parseInt(
+        new URLSearchParams(window.location.search).get("id")
+      );
+      const nombre =
+        document.querySelector(".titulo")?.textContent || "producto";
+      const talla = document.getElementById("select-talla")?.value || null;
+
+      agregarAlCarrito(
+        producto.id,
+        producto.titulo,
+        talla,
+        producto.peso,
+        obtenerPrecio(producto),
+        producto.img
+      );
+    }
+  });
 });
 
 document.addEventListener("DOMContentLoaded", () => {
