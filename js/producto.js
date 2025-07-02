@@ -38,29 +38,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     const makingTime = `All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3`;
 
     let tallas = "";
+
     if (producto.tallas?.length) {
       const opciones = producto.tallas
-        .map((t) => {
-          const modelo =
-            t.id === producto.tallaModelo ? " (seen in model)" : "";
-          return `<option value="${t.descripcion}">${t.descripcion}${modelo}</option>`;
+        .map((t, i) => {
+          const texto = `${t.descripcion}${
+            t.id === producto.tallaModelo ? " (seen in model)" : ""
+          }`;
+          return `<div class="dropdown-option" data-index="${i}" role="option">${texto}</div>`;
         })
         .join("");
 
       const extraOption =
         producto.tallas.length > 1
-          ? `<option value="custom">custom (send mail)</option>`
+          ? `<div class="dropdown-option" data-index="custom" role="option">custom (send mail)</div>`
           : "";
 
       tallas = `
-    <div class="talla-wrapper">
-      <label for="select-talla">size</label>
-      <select id="select-talla">
-        ${opciones}
-        ${extraOption}
-      </select>
+  <div class="talla-wrapper">
+    <div class="dropdown" role="listbox" tabindex="0">
+      <div class="dropdown-toggle">choose a size</div>
+      <div class="dropdown-menu">${opciones}${extraOption}</div>
     </div>
-  `;
+  </div>
+`;
     }
 
     // Colección
@@ -112,8 +113,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       );
       const nombre =
         document.querySelector(".titulo")?.textContent || "producto";
-      const talla = document.getElementById("select-talla")?.value || null;
-
+      const talla =
+        document.querySelector(".dropdown[data-selected] .dropdown-toggle")
+          ?.textContent || null;
+          
       agregarAlCarrito(
         producto.id,
         producto.titulo,
@@ -163,4 +166,33 @@ document.addEventListener("DOMContentLoaded", () => {
   overlay.addEventListener("click", () => {
     overlay.classList.remove("visible");
   });
+});
+
+document.addEventListener("click", (e) => {
+  const toggle = e.target.closest(".dropdown-toggle");
+  const option = e.target.closest(".dropdown-option");
+
+  if (toggle) {
+    // Cerrar otros dropdowns abiertos
+    document.querySelectorAll(".dropdown.open").forEach((d) => {
+      if (d !== toggle.closest(".dropdown")) d.classList.remove("open");
+    });
+    // Abrir o cerrar el actual
+    toggle.closest(".dropdown").classList.toggle("open");
+    return;
+  }
+
+  if (option) {
+    const container = option.closest(".dropdown");
+    const toggle = container.querySelector(".dropdown-toggle");
+    toggle.textContent = option.textContent;
+    container.classList.remove("open");
+    container.dataset.selected = option.dataset.index;
+    return;
+  }
+
+  // Si se clicó fuera, cerrar todos
+  document
+    .querySelectorAll(".dropdown.open")
+    .forEach((d) => d.classList.remove("open"));
 });

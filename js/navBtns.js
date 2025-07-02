@@ -2,46 +2,60 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageType = document.body.dataset.pageType;
   if (!pageType) return;
 
-  const botonesArriba = document.createElement("div");
-  botonesArriba.classList.add("fixed-buttons-top");
+  // Contenedores por posición
+  const topRight = document.createElement("div");
+  topRight.classList.add("fixed-buttons-top");
 
-  const linksAbajo = document.createElement("div");
-  linksAbajo.classList.add("fixed-links-bottom");
+  const bottomRight = document.createElement("div");
+  bottomRight.classList.add("fixed-links-bottom");
 
-  // TOP RIGHT: carrito y filtro (solo en home)
+  const bottomLeft = document.createElement("div");
+  bottomLeft.classList.add("fixed-links-bottom", "left");
+
+  // ==== HOME ====
   if (pageType === "home") {
-    botonesArriba.innerHTML = `
-  <a href="#" id="btn-carrito" class="boton-fijo">carrito<sup id="carrito-count"></sup></a>
-  <a href="#" id="btn-filtro" class="boton-fijo">filtrar</a>
-`;
+    topRight.innerHTML = `
+      <a href="#" id="btn-carrito" class="boton-fijo">carrito<sup id="carrito-count"></sup></a>
+      <a href="#" id="btn-filtro" class="boton-fijo">filtrar</a>
+    `;
+    bottomRight.innerHTML = `
+      <a href="about.html" class="boton-fijo">about</a>
+      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+    `;
   }
 
-  // BOTTOM RIGHT: about y mail
-  if (pageType !== "about") {
-    linksAbajo.innerHTML += `
-      <a href="about.html" class="boton-fijo">about</a>
+  // ==== PRODUCT ====
+  if (pageType === "product") {
+    bottomRight.innerHTML = `
+      <a href="#" id="btn-carrito" class="boton-fijo">carrito<sup id="carrito-count"></sup></a>
     `;
-  } 
-  
-  if (pageType !== "home"){
-    linksAbajo.innerHTML += `
+    bottomLeft.innerHTML = `
+      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+      <a href="about.html" class="boton-fijo">about</a>
       <a href="index.html" class="boton-fijo">home</a>
     `;
   }
 
-  linksAbajo.innerHTML += `
-    <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
-  `;
+  // ==== ABOUT ====
+  if (pageType === "about") {
+    bottomRight.innerHTML = `
+      <a href="index.html" class="boton-fijo">home</a>
+      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+    `;
+    bottomLeft.innerHTML = `
+      <a href="#" id="btn-carrito" class="boton-fijo">carrito<sup id="carrito-count"></sup></a>
+    `;
+  }
 
-  document.body.appendChild(botonesArriba);
-  document.body.appendChild(linksAbajo);
+  // Inyectar según existan
+  if (topRight.innerHTML) document.body.appendChild(topRight);
+  if (bottomRight.innerHTML) document.body.appendChild(bottomRight);
+  if (bottomLeft.innerHTML) document.body.appendChild(bottomLeft);
 });
 
-/**JS funcional para evitar navegación y abrir popup/desplegable:*/
-
+// Acciones de los botones especiales
 document.addEventListener("click", (e) => {
   const target = e.target.closest("a.boton-fijo");
-
   if (!target) return;
 
   if (target.id === "btn-carrito") {
@@ -54,3 +68,16 @@ document.addEventListener("click", (e) => {
     toggleFiltro();
   }
 });
+
+// ==== NUEVA PAGINA ====
+// if (pageType === "nueva") {
+//   topRight.innerHTML = `
+//     <a href="#" class="boton-fijo">nuevo</a>
+//   `;
+//   bottomRight.innerHTML = `
+//     <a href="index.html" class="boton-fijo">home</a>
+//   `;
+//   bottomLeft.innerHTML = `
+//     <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+//   `;
+// }

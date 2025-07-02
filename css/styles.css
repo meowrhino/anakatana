@@ -8,11 +8,36 @@
   --grisAnaKtana: #494b49;
 }
 
+.talla-wrapper {
+  position: relative;
+  width: 100%;
+  z-index: 0;
+}
+
 .dropdown {
   position: relative;
-  display: inline-block;
-  font-family: "Noto Serif JP", serif;
-  width: 100%;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* Esto asegura que el contenedor respete su ancho */
+  overflow: visible;
+}
+
+.dropdown-menu {
+  display: none; /* Oculta el menú por defecto */
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: auto;
+  min-width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: black;
+}
+
+.dropdown.open .dropdown-menu {
+  display: block; /* Solo se ve si el contenedor tiene la clase .open */
 }
 
 .dropdown-toggle {
@@ -32,32 +57,18 @@
   border-color: var(--grisAnaKtana);
 }
 
-.dropdown-menu {
-  display: none;
-  position: absolute;
-  background-color: black;
-  border: 1px solid white;
-  width: 100%;
-  z-index: 10;
-  margin-top: 0.2rem;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-}
-
-.dropdown-menu li {
-  list-style: none;
-  padding: 0.6rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.dropdown-menu li:hover {
-  background-color: var(--grisAnaKtana);
-  color: black;
-}
-
 .dropdown.open .dropdown-menu {
   display: block;
+}
+
+.dropdown-option {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+
+.dropdown-option:hover {
+  background-color: var(--grisAnaKtana);
+  color: black;
 }
 
 * {
@@ -295,7 +306,7 @@ body[data-page-type="product"] .precios {
   color: var(--grisAnaKtana);
 }
 
-#carrito-count{
+#carrito-count {
   font-size: 0.6rem;
 }
 /*DESCUENTOS & diversión*/
@@ -446,6 +457,21 @@ body[data-page-type="product"] .precios {
   right: 3vh;
 }
 
+.fixed-buttons-left {
+  position: fixed;
+  top: 3vh;
+  left: 3vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.fixed-links-bottom.left {
+  left: 3vh;
+  right: auto;
+}
+
 /*PRODUCTO DETALLE*/
 
 #detalle-producto {
@@ -458,7 +484,7 @@ body[data-page-type="product"] .precios {
   top: 0vh;
   bottom: 10vh;
 
-  overflow-y: auto;
+  overflow-y: visible;
   scroll-behavior: smooth;
 }
 
@@ -734,7 +760,6 @@ body[data-page-type="about"] {
   margin: 0;
   padding: 0;
 }
-
 
 /*carrito*/
 
