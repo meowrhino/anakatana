@@ -98,5 +98,41 @@
         "precioRebajas": "3,00",
         "stock": 20,
         "soldOut": "no"
+    },
+        {
+        "id": 4,
+        "img": "img/aphex_1.jpeg",
+        "titulo": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": "35,00",
+        "descripcion_corta": "tank top algodón y elastano impreso en DTF",
+        "descripcion": "tank top algodón y elastano impreso en DTF",
+        "peso": 250,
+        "tipo": [
+            "top"
+        ],
+        "colección": "BASICS",
+        "tallas": [
+            {
+                "id": 1,
+                "descripcion": "30cm width x 65cm length"
+            },
+            {
+                "id": 2,
+                "descripcion": "34cm width x 67cm length"
+            },
+            {
+                "id": 3,
+                "descripcion": "38cm width x 69cm length"
+            },
+            {
+                "id": 4,
+                "descripcion": "42cm width x 71cm length"
+            }
+        ],
+        "tallaModelo": 1,
+        "rebajas": "si",
+        "precioRebajas": "25",
+        "stock": 50,
+        "soldOut": "no"
     }
 ]
