@@ -4,10 +4,6 @@
   --grisAnaKtana: #494b49;
 }
 
-:root {
-  --grisAnaKtana: #494b49;
-}
-
 .talla-wrapper {
   position: relative;
   width: 100%;
@@ -274,6 +270,7 @@ body[data-page-type="product"] .precios {
   }
 }
 
+/*
 .btn-añadir-carrito {
   all: unset;
   font-family: "Noto Serif JP", serif;
@@ -285,6 +282,7 @@ body[data-page-type="product"] .precios {
   cursor: pointer;
   transition: color 0.3s;
 }
+  */
 
 .btn-añadir-carrito:hover {
   color: var(--grisAnaKtana);
