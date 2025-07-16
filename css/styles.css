@@ -531,15 +531,8 @@ body[data-page-type="product"] .home_titulo_precio {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: right top; /* aquí fuerzas que, dentro de su caja, la imagen quede pegada arriba-derecha */
 }
-
-@media (min-width: 768px) {
-  .producto-img {
-    object-position: right top; /* aquí fuerzas que, dentro de su caja, la imagen quede pegada arriba-derecha */
-  }
-}
-
-
 
 
 /*ABOUT*/
