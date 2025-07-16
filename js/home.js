@@ -93,9 +93,9 @@ function renderProductos(productos, contenedor) {
 
     divProducto.innerHTML = `
       ${imagenHTML}
-      <p class="descripcion_corta">${producto.descripcion_corta}</p>
       <div class="home_titulo_precio">
         ${tituloHTML}
+        <p class="descripcion_corta">${producto.descripcion_corta}</p>
         ${precioHTML}
       </div>
     `;
