@@ -96,8 +96,8 @@ function renderProductos(productos, contenedor) {
       <div class="home_titulo_precio">
         ${tituloHTML}
         ${precioHTML}
-        </div>
-        <p class="descripcion_corta">${producto.descripcion_corta}</p>
+      </div>
+      <p class="descripcion_corta">${producto.descripcion_corta}</p>
     `;
 
     divProducto.addEventListener("click", () => {
