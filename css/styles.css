@@ -2,6 +2,351 @@
 
 :root {
   --grisAnaKtana: #494b49;
+  --clamp1: clamp(1rem, 2.5vw, 1.8rem);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+
+  background-color: black;
+  color: white;
+
+  overflow-x: hidden;
+}
+a {
+  text-decoration: none;
+  color: inherit; /* hereda el color del body */
+}
+
+a:hover {
+  color: var(--grisAnaKtana);
+  animation: pumpum 1s ease-in-out infinite;
+}
+
+@keyframes pumpum {
+  0%,
+  100% {
+    color: white;
+  }
+  50% {
+    color: var(--grisAnaKtana);
+  }
+}
+
+
+
+/*LOGO BACKGROUND*/
+
+#logo-texture {
+  position: fixed;
+  top: 100px;
+  left: -1000px;
+
+  min-width: 1813px;
+  min-height: 1418px;
+
+  scale: 1;
+  opacity: 0.4; /* como textura sutil */
+
+  background-image: url("../root/hifasLogo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  pointer-events: none;
+  z-index: -1;
+}
+
+#logo-texture--about {
+  position: fixed;
+  top: 40%;
+  left: 48%;
+  transform: translate(-50%, -50%) scale(1.3);
+
+  min-width: 1813px;
+  min-height: 1418px;
+
+  opacity: 0.4;
+
+  background-image: url("../root/hifasLogo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  pointer-events: none;
+  z-index: -1;
+}
+
+
+
+/*BOTONES FIJOS*/
+
+.fixed-buttons-top,
+.fixed-links-bottom {
+  position: fixed;
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+
+  gap: 0.5rem;
+  z-index: 1;
+}
+
+.fixed-buttons-top {
+  top: 3vh;
+  right: 3vh;
+}
+
+.fixed-links-bottom {
+  bottom: 3vh;
+  right: 3vh;
+}
+
+.fixed-buttons-left {
+  position: fixed;
+  top: 3vh;
+  left: 3vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.fixed-links-bottom.left {
+  left: 3vh;
+  right: auto;
+}
+
+
+
+/*HOME: GALERIA*/
+
+#galeria-productos {
+  column-count: 2;
+  column-gap: 2rem;
+  position: fixed;
+
+  top: 10vh;
+  bottom: 10vh;
+  left: 5vh;
+  right: 5vh;
+
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+  #galeria-productos {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1600px) {
+  #galeria-productos {
+    column-count: 4;
+  }
+}
+
+#galeria-productos > * {
+  break-inside: avoid;
+  margin-bottom: 2rem;
+}
+
+/*HOME: CADA PRODUCTO*/
+
+.home_titulo_precio {
+  font-family: "Noto Serif JP", serif;
+  font-weight: 400;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: var(--clamp1);
+
+  gap: 0.5rem;
+}
+
+.home_titulo_precio .precio {
+  margin-left: auto;
+}
+
+.descripcion_corta {
+  display: none;
+}
+
+.producto:hover .descripcion_corta {
+  display: block;
+}
+
+
+
+/*HOME: PRODUCTO SOLDOUT*/
+
+.soldout-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* no bloquea el hover del producto */
+  z-index: 5;
+}
+
+.producto:hover .soldout-overlay {
+  opacity: 0;
+}
+
+.soldout-label-central {
+  font-size: 0.8rem;
+  font-family: "IBM Plex Sans", sans-serif;
+  color: var(--grisAnaKtana);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.soldout-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: black;
+
+  font-size: 4rem;
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  white-space: nowrap; /* 👈 fuerza que no se divida */
+  pointer-events: none;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 480px) {
+  .soldout-label {
+    font-size: 3rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+/*HOME: PRODUCTO OFERTA*/
+
+.home_titulo_precio .precio--tachado {
+  text-decoration: line-through;
+}
+
+.precio--tachado {
+  position: relative;
+  display: inline-block;
+  opacity: 0.5;
+  animation: brilloTachado 1s ease-in-out infinite;
+}
+
+@keyframes brilloTachado {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.corner-label {
+  position: absolute;
+  font-size: 0.7rem;
+  background: none;
+  color: black;
+  padding: 2rem 1.5rem;
+  text-transform: uppercase;
+  font-family: "IBM Plex Sans", sans-serif;
+  animation: parpadeo 1.5s ease-in-out infinite;
+  opacity: 0.9;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes parpadeo {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.top-left {
+  top: 0;
+  left: 0;
+}
+.top-right {
+  top: 0;
+  right: 0;
+}
+.bottom-left {
+  bottom: 0;
+  left: 0;
+}
+.bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+/*HOME BARRAS SUP E INF*/
+
+#carrito-count {
+  font-size: 0.6rem;
+}
+
+
+
+
+
+
+/*PRODUCTO ITEM*/
+
+body[data-page-type="product"] .home_titulo_precio {
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+body[data-page-type="product"] .precios {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.producto {
+  position: relative;
+  cursor: pointer;
+}
+
+.producto img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.img-wrapper {
+  position: relative;
 }
 
 .talla-wrapper {
@@ -67,223 +412,6 @@
   color: black;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: Helvetica, Arial, sans-serif;
-
-  background-color: black;
-  color: white;
-
-  overflow-x: hidden;
-}
-a {
-  text-decoration: none;
-  color: inherit; /* hereda el color del body */
-}
-
-a:hover {
-  color: var(--grisAnaKtana);
-  animation: pumpum 1s ease-in-out infinite;
-}
-
-@keyframes pumpum {
-  0%,
-  100% {
-    color: white;
-  }
-  50% {
-    color: var(--grisAnaKtana);
-  }
-}
-
-/*CONTAINER HOME*/
-
-#galeria-productos {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* por defecto, 2 columnas */
-  grid-auto-flow: row; /* default, explícito */
-  gap: 2rem;
-
-  position: fixed;
-
-  /* padding: 10vh 5vh; */
-  top: 10vh; /* margen superior visible */
-  bottom: 10vh; /* margen inferior visible */
-  left: 5vh; /* margen lateral izquierdo */
-  right: 5vh; /* margen lateral derecho */
-
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-@media (min-width: 768px) {
-  #galeria-productos {
-    grid-template-columns: repeat(3, 1fr); /* en escritorio, 4 columnas */
-  }
-}
-
-@media (min-width: 1600px) {
-  #galeria-productos {
-    grid-template-columns: repeat(4, 1fr); /* en escritorio, 4 columnas */
-  }
-}
-
-#galeria-productos::-webkit-scrollbar {
-  width: 1vh;
-}
-#galeria-productos::-webkit-scrollbar-thumb {
-  background: var(--grisAnaKtana);
-}
-
-/*PRODUCTO ITEM*/
-
-body[data-page-type="product"] .home_titulo_precio {
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-}
-
-body[data-page-type="product"] .precios {
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.producto {
-  position: relative;
-  cursor: pointer;
-}
-
-.producto img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
-}
-
-.img-wrapper {
-  position: relative;
-}
-
-/*no se si le gustaba a ana o no
-
-.img--soldout {
-  filter: grayscale(100%);
-}*/
-
-.soldout-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.3s ease;
-  pointer-events: none; /* no bloquea el hover del producto */
-  z-index: 5;
-}
-
-.producto:hover .soldout-overlay {
-  opacity: 0;
-}
-
-.soldout-label-central {
-  font-size: 0.8rem;
-  font-family: "IBM Plex Sans", sans-serif;
-  color: var(--grisAnaKtana);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-/*y esto es el antiguo
-.corner-label.soldout-label {
-  background-color: #aaa;
-  color: white;
-  font-weight: bold;
-  font-size: 0.7rem;
-  padding: 4px 6px;
-  text-transform: uppercase;
-}*/
-
-.descripcion_corta {
-  display: none;
-}
-
-.producto:hover .descripcion_corta {
-  display: block;
-}
-
-.home_titulo_precio {
-  font-family: "Noto Serif JP", serif;
-  font-weight: 400;
-
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  font-size: clamp(1rem, 2.5vw, 1.8rem);
-
-  gap: 0.5rem;
-}
-
-.home_titulo_precio .precio {
-  margin-left: auto;
-}
-
-.soldout-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: black;
-
-  font-size: 4rem;
-  text-transform: uppercase;
-  padding: 0.4rem 0.8rem;
-  white-space: nowrap; /* 👈 fuerza que no se divida */
-  pointer-events: none;
-  font-family: "IBM Plex Sans", sans-serif;
-  letter-spacing: 0.1em;
-}
-
-/*no me supergusta que se pierda*/
-
-@media (max-width: 480px) {
-  .soldout-label {
-    font-size: 3rem;
-    padding: 0.3rem 0.6rem;
-  }
-}
-
-/*
-.btn-añadir-carrito {
-  all: unset;
-  font-family: "Noto Serif JP", serif;
-  font-size: clamp(1rem, 2.5vw, 2rem);
-  font-weight: 400;
-  text-transform: uppercase;
-  align-self: flex-end;
-  padding: 0.5rem 0;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-  */
-
 .btn-añadir-carrito:hover {
   color: var(--grisAnaKtana);
 }
@@ -304,171 +432,7 @@ body[data-page-type="product"] .precios {
   color: var(--grisAnaKtana);
 }
 
-#carrito-count {
-  font-size: 0.6rem;
-}
-/*DESCUENTOS & diversión*/
 
-.corner-label {
-  position: absolute;
-  font-size: 0.7rem;
-  background: none;
-  color: black;
-  padding: 2rem 1.5rem;
-  text-transform: uppercase;
-  font-family: "IBM Plex Sans", sans-serif;
-  animation: parpadeo 1.5s ease-in-out infinite;
-  opacity: 0.9;
-  z-index: 2;
-  pointer-events: none;
-}
-
-@keyframes parpadeo {
-  0%,
-  100% {
-    opacity: 0.2;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.top-left {
-  top: 0;
-  left: 0;
-}
-.top-right {
-  top: 0;
-  right: 0;
-}
-.bottom-left {
-  bottom: 0;
-  left: 0;
-}
-.bottom-right {
-  bottom: 0;
-  right: 0;
-}
-
-/*tachar precio*/
-
-.home_titulo_precio .precio--tachado {
-  text-decoration: line-through;
-}
-
-.precio--tachado {
-  position: relative;
-  display: inline-block;
-  opacity: 0.5;
-  animation: brilloTachado 1s ease-in-out infinite;
-}
-
-@keyframes brilloTachado {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/*LOGO BACKGROUND*/
-
-#logo-texture {
-  position: fixed;
-  top: 100px;
-  left: -1000px;
-
-  min-width: 1813px;
-  min-height: 1418px;
-
-  scale: 1;
-  opacity: 0.4; /* como textura sutil */
-
-  background-image: url("../root/hifasLogo.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* #logo-texture--about {
-  position: fixed;
-  top: -450px;
-  left: -730px;
-  scale: 1.3;
-
-  min-width: 1813px;
-  min-height: 1418px;
-
-  opacity: 0.4;
-
-  background-image: url("../root/hifasLogo.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-
-  pointer-events: none;
-  z-index: -1;
-} */
-
-#logo-texture--about {
-  position: fixed;
-  top: 40%;
-  left: 48%;
-  transform: translate(-50%, -50%) scale(1.3);
-
-  min-width: 1813px;
-  min-height: 1418px;
-
-  opacity: 0.4;
-
-  background-image: url("../root/hifasLogo.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-
-  pointer-events: none;
-  z-index: -1;
-}
-
-/*BOTONES FIJOS*/
-
-.fixed-buttons-top,
-.fixed-links-bottom {
-  position: fixed;
-  display: flex;
-  flex-direction: row;
-  align-items: end;
-
-  gap: 0.5rem;
-  z-index: 1;
-}
-
-.fixed-buttons-top {
-  top: 3vh;
-  right: 3vh;
-}
-
-.fixed-links-bottom {
-  bottom: 3vh;
-  right: 3vh;
-}
-
-.fixed-buttons-left {
-  position: fixed;
-  top: 3vh;
-  left: 3vh;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 1000;
-}
-
-.fixed-links-bottom.left {
-  left: 3vh;
-  right: auto;
-}
 
 /*PRODUCTO DETALLE*/
 
@@ -496,7 +460,7 @@ body[data-page-type="product"] .precios {
 
 #detalle-producto.descripcion {
   font-size: clamp(0.8rem, 2vw, 1.6rem);
-}
+} /*incluir en el clamp anterior*/
 
 @media (max-width: 768px) {
   #detalle-producto.descripcion {
@@ -659,37 +623,7 @@ body[data-page-type="product"] .precios {
   }
 }
 
-.talla-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-family: "IBM Plex Sans", sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: clamp(0.8rem, 1.5vw, 1.2rem);
-  color: white;
-}
 
-.talla-wrapper label {
-  color: var(--grisAnaKtana);
-  font-size: 0.9em;
-}
-
-#select-talla {
-  background: transparent;
-  color: white;
-  border: 1px solid var(--grisAnaKtana);
-  padding: 0.2rem 0.5rem;
-  font-family: "IBM Plex Sans", sans-serif;
-  font-size: inherit;
-  text-transform: uppercase;
-  outline: none;
-}
-
-#select-talla option {
-  background-color: black;
-  color: white;
-}
 
 /*ABOUT*/
 
@@ -758,6 +692,8 @@ body[data-page-type="about"] {
   margin: 0;
   padding: 0;
 }
+
+
 
 /*carrito*/
 

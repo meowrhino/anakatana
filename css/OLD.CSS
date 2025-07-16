@@ -1,0 +1,37 @@
+/*GALERÍA ANTERIOR*/
+/* #galeria-productos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* por defecto, 2 columnas 
+  grid-auto-flow: row; 
+  gap: 2rem;
+
+  position: fixed;
+
+
+  top: 10vh; 
+  bottom: 10vh; 
+  left: 5vh; 
+  right: 5vh; 
+
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+  #galeria-productos {
+    grid-template-columns: repeat(3, 1fr); 
+  }
+}
+
+@media (min-width: 1600px) {
+  #galeria-productos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+#galeria-productos::-webkit-scrollbar {
+  width: 1vh;
+}
+#galeria-productos::-webkit-scrollbar-thumb {
+  background: var(--grisAnaKtana);
+} */

@@ -133,7 +133,7 @@
         "rebajas": "no",
         "precioRebajas": "",
         "stock": 5,
-        "soldOut": "no"
+        "soldOut": "si"
     },
          {
         "id": 5,

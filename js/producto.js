@@ -66,7 +66,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Colección
     const coleccion = producto["colección"]
-      ? `<p class="coleccion">${producto["colección"]}<sup>collection</sup></p>`
+      ? `<p class="coleccion">${producto["colección"]}<sup> collection</sup></p>`
       : "";
 
     // Botón o mensaje según stock
