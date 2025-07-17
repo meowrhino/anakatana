@@ -11,14 +11,7 @@ function agregarAlCarrito(
   precio = 0,
   img = ""
 ) {
-  const productoEnCarrito = carrito.find(
-    (p) => p.id === id && p.talla === talla
-  );
-  if (productoEnCarrito) {
-    productoEnCarrito.cantidad++;
-  } else {
-    carrito.push({ id, nombre, talla, cantidad: 1, peso, precio, img });
-  }
+  carrito.push({ id, nombre, talla, cantidad: 1, peso, precio, img });
   actualizarCarrito();
   actualizarContadorCarrito();
 }

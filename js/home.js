@@ -3,10 +3,17 @@ async function cargarProductos() {
   const productos = await respuesta.json();
   const contenedor = document.getElementById("galeria-productos");
 
+  // Inicializar filtros con los datos de productos
+  initFilters(productos);
+
+  // Renderizar inicialmente todos los productos
   renderProductos(productos, contenedor);
 }
 
 function renderProductos(productos, contenedor) {
+  // Limpiar contenedor antes de renderizar
+  contenedor.innerHTML = "";
+
   productos.forEach((producto) => {
     const divProducto = document.createElement("div");
     divProducto.className = "producto";
@@ -51,34 +58,6 @@ function renderProductos(productos, contenedor) {
       imagenHTML = `<div class="no-data">no data</div>`;
     }
 
-    /* version con el sold out label:
-    if (producto.img) {
-      const soldOutLabel = estaAgotado
-        ? `
-        <span class="soldout-label" style="transform: translate(-50%, -50%) rotate(${(
-          Math.random() * 50 -
-          25
-        ).toFixed(2)}deg);">
-          sold out
-        </span>`
-        : "";
-
-      const wrapperClass = `img-wrapper${estaAgotado ? " soldout" : ""}${
-        enRebajas ? " en-rebajas" : ""
-      }`;
-      const imgClass = estaAgotado ? 'class="img--soldout"' : "";
-
-      imagenHTML = `
-        <div class="${wrapperClass}">
-          <img src="${producto.img}" alt="${producto.titulo}" ${imgClass}>
-          ${soldOutLabel}
-          ${saleCorners}
-        </div>`;
-    } else {
-      imagenHTML = `<div class="no-data">no data</div>`;
-    }
-    */
-
     // Título y precio
     const tituloHTML = `<span class="titulo">${producto.titulo}</span>`;
     const precioHTML = `
@@ -108,16 +87,57 @@ function renderProductos(productos, contenedor) {
   });
 }
 
-function activarDescripcionHover(productoElemento) {
-  const descripcion = productoElemento.querySelector(".descripcion_corta");
+// Inicializa y gestiona los filtros de colección y tipo
+function initFilters(productos) {
+  const filtroColeccion = document.getElementById("filtro-coleccion");
+  const filtroTipo = document.getElementById("filtro-tipo");
 
-  productoElemento.addEventListener("mouseenter", () => {
-    descripcion.classList.add("show");
+  if (!filtroColeccion || !filtroTipo) return;
+
+  // Obtener valores únicos
+  const colecciones = Array.from(new Set(productos.map(p => p.coleccion).filter(Boolean)));
+  const tipos = Array.from(new Set(productos.map(p => p.tipo).filter(Boolean)));
+
+  // Populate selects
+  colecciones.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    filtroColeccion.appendChild(opt);
+  });
+  tipos.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    filtroTipo.appendChild(opt);
   });
 
-  productoElemento.addEventListener("mouseleave", () => {
-    descripcion.classList.remove("show");
+  // Manejar cambios de filtros
+  [filtroColeccion, filtroTipo].forEach(select => {
+    select.addEventListener("change", () => applyFilters(productos));
   });
 }
 
+// Filtra y renderiza según selección
+function applyFilters(productos) {
+  const filtroColeccion = document.getElementById("filtro-coleccion");
+  const filtroTipo = document.getElementById("filtro-tipo");
+  const contenedor = document.getElementById("galeria-productos");
+
+  let filtrados = productos;
+
+  const colecValue = filtroColeccion.value;
+  const tipoValue = filtroTipo.value;
+
+  if (colecValue) {
+    filtrados = filtrados.filter(p => p.coleccion === colecValue);
+  }
+  if (tipoValue) {
+    filtrados = filtrados.filter(p => p.tipo === tipoValue);
+  }
+
+  renderProductos(filtrados, contenedor);
+}
+
+// Asegurar que al cargar el DOM se inicie la carga
 document.addEventListener("DOMContentLoaded", cargarProductos);

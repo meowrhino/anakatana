@@ -173,6 +173,9 @@ a:hover {
 .producto {
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .producto img {
@@ -223,15 +226,6 @@ a:hover {
 .precio {
   font-weight: bold;
 }
-
-/* .descripcion_corta {
-  display: none;
-  font-size: var(--clamp2);
-}
-
-.producto:hover .descripcion_corta {
-  display: block;
-} */
 
 /*HOME: PRODUCTO SOLDOUT*/
 
