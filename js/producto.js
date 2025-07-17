@@ -127,6 +127,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       );
     }
   });
+
+  console.log("Producto inyectado, reseteando scroll…");
+  contenedor.scrollTop = 0;
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -220,8 +223,13 @@ document.addEventListener("click", (e) => {
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  // O si es el scroll de #detalle-producto:
   const detalle = document.getElementById('detalle-producto');
-  if (detalle) detalle.scrollTop = 0;
+  if (!detalle) return;
+  console.log('[Debug] DOMContentLoaded scroll listener fired');
+  // Ejecutar justo tras el próximo repaint
+  requestAnimationFrame(() => {
+    console.log('[Debug] RAF before reset:', detalle.scrollTop);
+    detalle.scrollTop = 0;
+    console.log('[Debug] RAF after reset:', detalle.scrollTop);
+  });
 });
