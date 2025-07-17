@@ -116,7 +116,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       const talla =
         document.querySelector(".dropdown[data-selected] .dropdown-toggle")
           ?.textContent || null;
-          
+
       agregarAlCarrito(
         producto.id,
         producto.titulo,
@@ -197,13 +197,12 @@ document.addEventListener("click", (e) => {
     .forEach((d) => d.classList.remove("open"));
 });
 
-
 // --- ajuste dinámico de ratio en móvil ---
-(function() {
+(function () {
   // Si quieres que solo corra en móvil, comprueba el ancho:
   if (window.innerWidth < 480) {
-    document.querySelectorAll('.producto-img-container').forEach(wrapper => {
-      const img = wrapper.querySelector('img');
+    document.querySelectorAll(".producto-img-container").forEach((wrapper) => {
+      const img = wrapper.querySelector("img");
 
       function ajustarRatio() {
         const ratio = img.naturalHeight / img.naturalWidth;
@@ -214,8 +213,19 @@ document.addEventListener("click", (e) => {
         // ya estuvo en caché
         ajustarRatio();
       } else {
-        img.addEventListener('load', ajustarRatio);
+        img.addEventListener("load", ajustarRatio);
       }
     });
   }
 })();
+
+window.addEventListener("load", () => {
+  const detalle = document.getElementById("detalle-producto");
+  if (detalle) {
+    // sin animación:
+    detalle.scrollTop = 0;
+
+    // con animación (si soporta scroll-behavior en CSS):
+    // detalle.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
