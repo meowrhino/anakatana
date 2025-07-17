@@ -126,37 +126,47 @@ a:hover {
 }
 
 /*HOME: GALERIA*/
-
 #galeria-productos {
-  column-count: 2;
-  column-gap: 2rem;
   position: fixed;
-
   top: 10vh;
   bottom: 10vh;
-  left: 5vh;
-  right: 5vh;
+  left: 5vw; /* márgenes laterales en % de ancho */
+  right: 5vw;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* siempre 2 cols en móvil */
+  gap: 2rem;
 
   overflow-y: auto;
+  overflow-x: hidden; /* ojo: ocultamos cualquier desborde horizontal */
   scroll-behavior: smooth;
 }
 
+/* tablet/desktop: subimos número de columnas */
 @media (min-width: 768px) {
   #galeria-productos {
-    column-count: 3;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
+@media (min-width: 1200px) {
+  #galeria-productos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* si quieres más en ultra‐wide: */
 @media (min-width: 1600px) {
   #galeria-productos {
-    column-count: 4;
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
-#galeria-productos > * {
-  break-inside: avoid;
-  margin-bottom: 2rem;
-}
+/* #galeria-productos > * {
+
+  display: flex;
+  flex-direction: column;
+} */
 
 /*HOME: CADA PRODUCTO*/
 
@@ -377,7 +387,7 @@ a:hover {
   flex-direction: column;
   gap: 2rem;
   max-width: 1400px;
-  
+
   overflow-x: hidden;
 }
 
