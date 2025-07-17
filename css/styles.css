@@ -351,18 +351,13 @@ a:hover {
 #detalle-producto {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
 
   position: fixed;
   top: 0vh;
   bottom: 10vh;
-
   left: 5vh;
   right: 5vh;
-
-  overflow-y: auto;
+  
   scroll-behavior: smooth;
 
   font-family: "IBM Plex Sans", sans-serif;
@@ -388,16 +383,12 @@ a:hover {
   .producto-layout {
     display: flex;
     flex-direction: row;
-    gap: 2rem;
-
-    justify-content: center;
   }
 }
 
 @media (min-width: 768px) {
   .producto-layout {
     align-items: flex-start;
-    max-width: 1400px;
     gap: 5rem;
   }
 }
@@ -409,27 +400,7 @@ a:hover {
   object-position: right top; /* aquí fuerzas que, dentro de su caja, la imagen quede pegada arriba-derecha */
 }
 
-/*
 
-@media (min-width: 480px) {
-  .producto-img-container {
-    height: 66vh;
-    flex: 1.2;
-  }
-}
-
-@media (min-width: 768px) {
-  .producto-img-container {
-    flex: 0.8;
-  }
-}
-
-@media (min-width: 1024px) {
-  .producto-img-container {
-    flex: 0.6;
-  }
-}
-  */
 
 body[data-page-type="product"] .home_titulo_precio {
   font-size: var(--clamp3);
@@ -449,7 +420,7 @@ body[data-page-type="product"] .home_titulo_precio {
 
 @media (max-width: 480px) {
   .talla-wrapper {
-    width: 88%;
+    width: 99%;
   }
 }
 
