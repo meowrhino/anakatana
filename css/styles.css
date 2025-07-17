@@ -357,8 +357,9 @@ a:hover {
   bottom: 10vh;
   left: 5vh;
   right: 5vh;
-  
+
   scroll-behavior: smooth;
+  overflow-anchor: none;
 
   font-family: "IBM Plex Sans", sans-serif;
 }
@@ -399,8 +400,6 @@ a:hover {
   object-fit: contain;
   object-position: right top; /* aquí fuerzas que, dentro de su caja, la imagen quede pegada arriba-derecha */
 }
-
-
 
 body[data-page-type="product"] .home_titulo_precio {
   font-size: var(--clamp3);
