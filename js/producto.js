@@ -196,3 +196,26 @@ document.addEventListener("click", (e) => {
     .querySelectorAll(".dropdown.open")
     .forEach((d) => d.classList.remove("open"));
 });
+
+
+// --- ajuste dinámico de ratio en móvil ---
+(function() {
+  // Si quieres que solo corra en móvil, comprueba el ancho:
+  if (window.innerWidth < 480) {
+    document.querySelectorAll('.producto-img-container').forEach(wrapper => {
+      const img = wrapper.querySelector('img');
+
+      function ajustarRatio() {
+        const ratio = img.naturalHeight / img.naturalWidth;
+        wrapper.style.paddingBottom = `${ratio * 100}%`;
+      }
+
+      if (img.complete) {
+        // ya estuvo en caché
+        ajustarRatio();
+      } else {
+        img.addEventListener('load', ajustarRatio);
+      }
+    });
+  }
+})();
