@@ -56,8 +56,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       tallas = `
   <div class="talla-wrapper">
-    <div class="dropdown" role="listbox" tabindex="0">
-      <div class="dropdown-toggle">choose a size</div>
+    <div class="dropdown" role="listbox" tabindex="0" data-selected="${
+      producto.tallas.findIndex((t) => t.id === producto.tallaModelo) || 0
+    }">
+      <div class="dropdown-toggle">${
+        producto.tallas.find((t) => t.id === producto.tallaModelo)
+          ?.descripcion || producto.tallas[0]?.descripcion
+      }</div>
       <div class="dropdown-menu">${opciones}${extraOption}</div>
     </div>
   </div>
@@ -127,7 +132,6 @@ window.addEventListener("DOMContentLoaded", async () => {
       );
     }
   });
-
 });
 
 document.addEventListener("DOMContentLoaded", () => {
