@@ -97,7 +97,6 @@ function renderProductos(productos, contenedor) {
         ${tituloHTML}
         ${precioHTML}
       </div>
-      <!-- <p class="descripcion_corta">${producto.descripcion_corta}</p>-->
     `;
 
     divProducto.addEventListener("click", () => {
