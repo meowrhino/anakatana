@@ -224,14 +224,14 @@ a:hover {
   font-weight: bold;
 }
 
-.descripcion_corta {
+/* .descripcion_corta {
   display: none;
   font-size: var(--clamp2);
 }
 
 .producto:hover .descripcion_corta {
   display: block;
-}
+} */
 
 /*HOME: PRODUCTO SOLDOUT*/
 
