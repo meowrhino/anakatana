@@ -219,13 +219,9 @@ document.addEventListener("click", (e) => {
   }
 })();
 
-window.addEventListener("load", () => {
-  const detalle = document.getElementById("detalle-producto");
-  if (detalle) {
-    // sin animación:
-    detalle.scrollTop = 0;
+document.addEventListener('DOMContentLoaded', () => {
 
-    // con animación (si soporta scroll-behavior en CSS):
-    // detalle.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  // O si es el scroll de #detalle-producto:
+  const detalle = document.getElementById('detalle-producto');
+  if (detalle) detalle.scrollTop = 0;
 });
