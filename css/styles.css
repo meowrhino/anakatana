@@ -367,6 +367,8 @@ a:hover {
 @media (min-width: 480px) {
   #detalle-producto {
     top: 10vh;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -375,14 +377,14 @@ a:hover {
   flex-direction: column;
   gap: 2rem;
   max-width: 1400px;
-  justify-content: center;
-
+  
   overflow-x: hidden;
 }
 
 @media (min-width: 480px) {
   .producto-layout {
     display: flex;
+    justify-content: center;
     flex-direction: row;
   }
 }
