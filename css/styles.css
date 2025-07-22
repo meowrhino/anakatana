@@ -395,7 +395,7 @@ a:hover {
 
 @media (min-width: 768px) {
   .producto-layout {
-    align-items: flex-start;
+    /*align-items: flex-start;*/
     gap: 5rem;
   }
 }

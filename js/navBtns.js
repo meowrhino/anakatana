@@ -59,9 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (bottomLeft.innerHTML) document.body.appendChild(bottomLeft);
 
   // Inicializar panel de filtros solo en home
+  /*
   if (pageType === "home") initFiltroPanel();
+  */
 });
-
 // Acciones de los botones especiales
 document.addEventListener("click", (e) => {
   const target = e.target.closest("a.boton-fijo");

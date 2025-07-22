@@ -4,7 +4,7 @@ async function cargarProductos() {
   const contenedor = document.getElementById("galeria-productos");
 
   // Inicializar filtros con los datos de productos
-  initFilters(productos);
+  //initFilters(productos);
 
   // Renderizar inicialmente todos los productos
   renderProductos(productos, contenedor);
@@ -83,7 +83,7 @@ function renderProductos(productos, contenedor) {
     });
 
     contenedor.appendChild(divProducto);
-    activarDescripcionHover(divProducto);
+    //activarDescripcionHover(divProducto);
   });
 }
 
