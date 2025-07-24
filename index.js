@@ -1,3 +1,11 @@
+// index.js
+
+// 1) Levanta el servidor Express que tienes en server.js
+require('./server.js');
+
+// 2) Aquí podrías tener otra lógica distinta si la necesitas
+console.log('Index.js sigue vivo 🍣');
+
 // DEMO: Backend Node+Express para tienda online
 // Estructura lista para copiar-pegar en Render
 

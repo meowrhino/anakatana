@@ -68,6 +68,15 @@ function initCheckout() {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // Recoger datos de dirección del formulario
+      const addressData = {
+        nombreCliente: form.elements["nombreCliente"].value,
+        direccion: form.elements["direccion"].value,
+        ciudad: form.elements["ciudad"].value,
+        codigoPostal: form.elements["codigoPostal"].value,
+        pais: form.elements["pais"].value
+      };
+
       // Preparar datos reales del carrito...
       const carritoStripe = carrito.map((item) => ({
         nombre: item.nombre,
@@ -93,7 +102,12 @@ function initCheckout() {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ carrito: carritoStripe, envio: envioCoste }),
+            body: JSON.stringify({
+              carrito: carritoStripe,
+              envio: envioCoste,
+              direccion: addressData,
+              fecha: new Date().toISOString()
+            }),
           }
         );
         const data = await response.json();
