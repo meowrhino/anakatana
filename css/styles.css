@@ -929,3 +929,19 @@ body[data-page-type="about"] {
     grid-column: auto;
   }
 }
+
+#zonaDropdown .dropdown-menu {
+  display: none;
+}
+
+#zonaDropdown.open .dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centra horizontalmente */
+}
+
+#zonaDropdown.open .dropdown-option {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* centra horizontalmente */
+}

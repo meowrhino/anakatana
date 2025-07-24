@@ -46,13 +46,13 @@ function initCheckout() {
     lista.appendChild(row);
   });
 
-  // 3. Calcular y mostrar totales
-  const envioCoste = 0; // ajustar si se integra cálculo de envío
+  // 3. Calcular y mostrar totales (sin comisión hasta seleccionar zona)
+  const envioCoste = 0; // envío por defecto sin elegir zona
   document.getElementById("total-items").textContent = totalItems;
   document.getElementById("subtotal").textContent = subtotal.toFixed(2) + "€";
-  document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
-  document.getElementById("total-pago").textContent =
-    (subtotal + envioCoste).toFixed(2) + "€";
+  document.getElementById("envio").textContent = "n/a";
+  document.getElementById("comision").textContent = "n/a"; // comisión en cero hasta selección
+  document.getElementById("total-pago").textContent = subtotal.toFixed(2) + "€";
 
   // 4. Manejar envío del formulario
   // Reemplaza sólo la sección del formulario (sección 4) en checkout.js por esto:
@@ -62,73 +62,143 @@ function initCheckout() {
   ); // ← Cambia aquí tu clave pública
 
   // Manejar envío del formulario
+  // 4. Manejar envío del formulario
   const form = document.getElementById("form-checkout");
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    // Preparar datos reales del carrito desde localStorage (ya lo tienes!)
-    const carritoStripe = carrito.map((item) => ({
-      nombre: item.nombre,
-      precio: item.precio,
-      cantidad: item.cantidad,
-    }));
+      // Preparar datos reales del carrito...
+      const carritoStripe = carrito.map((item) => ({
+        nombre: item.nombre,
+        precio: item.precio,
+        cantidad: item.cantidad,
+      }));
 
-    // Obtienes costes ya calculados en tu lógica
-    const subtotal = carrito.reduce(
-      (sum, item) => sum + item.precio * item.cantidad,
-      0
-    );
-    const zona = document.getElementById("zonaDropdown").dataset.selected;
-    const pesoTotal = carrito.reduce(
-      (sum, item) => sum + item.peso * item.cantidad,
-      0
-    );
-    const envioCoste = calcularEnvioCoste(pesoTotal, zona);
-    try {
-      // Crear sesión de pago en Render
-      const response = await fetch(
-        "https://anakatana-backend.onrender.com/crear-sesion",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ carrito: carritoStripe, envio: envioCoste }),
-        }
+      // Recalcula subtotal y envío
+      subtotal = carrito.reduce(
+        (sum, item) => sum + item.precio * item.cantidad,
+        0
+      );
+      const zona = document.getElementById("zonaDropdown").dataset.selected;
+      const pesoTotal = carrito.reduce(
+        (sum, item) => sum + item.peso * item.cantidad,
+        0
+      );
+      const envioCoste = calcularEnvioCoste(pesoTotal, zona);
+
+      try {
+        const response = await fetch(
+          "https://anakatana-backend.onrender.com/crear-sesion",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ carrito: carritoStripe, envio: envioCoste }),
+          }
+        );
+        const data = await response.json();
+        await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      } catch (error) {
+        console.error(error);
+        alert("Error al procesar el pago. Intenta de nuevo.");
+      }
+    }); // cierra form.addEventListener
+  } else {
+    console.warn("No se encontró el formulario de checkout.");
+  }
+
+  const zonaSelect = document.getElementById("zona-envio");
+  if (zonaSelect) {
+    zonaSelect.addEventListener("change", () => {
+      const zona = zonaSelect.value;
+      if (!zona) return;
+
+      // Calcular peso total
+      const pesoTotal = carrito.reduce(
+        (sum, item) => sum + item.peso * item.cantidad,
+        0
       );
 
-      const data = await response.json();
+      // Calcular nuevo coste de envío
+      const envioCoste = calcularEnvioCoste(pesoTotal, zona);
 
-      // Redirigir a Stripe Checkout
-      await stripe.redirectToCheckout({ sessionId: data.sessionId });
-    } catch (error) {
-      console.error(error);
-      alert("Error al procesar el pago. Intenta de nuevo.");
+      // Actualizar DOM
+      document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
+
+      const subtotal = carrito.reduce(
+        (sum, item) => sum + item.precio * item.cantidad,
+        0
+      );
+      const feeRate = 0.014;
+      const baseTotal = subtotal + envioCoste;
+      const total = baseTotal / (1 - feeRate);
+      const comision = total * feeRate;
+      document.getElementById("comision").textContent = comision.toFixed(2) + "€";
+      document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
+    });
+  }
+}
+
+// ---- Dropdown personalizado para zona de envío ----
+document.addEventListener("DOMContentLoaded", () => {
+  const dropdown = document.getElementById("zonaDropdown");
+  if (!dropdown) return;
+
+  const toggle = dropdown.querySelector(".dropdown-toggle");
+  const menu = document.getElementById("zonaOpciones");
+
+  if (!toggle || !menu) return;
+
+  // Poblar las opciones desde TARIFAS_ENVIO
+  menu.innerHTML = "";
+  Object.keys(TARIFAS_ENVIO).forEach((zona) => {
+    const option = document.createElement("div");
+    option.className = "dropdown-option";
+    option.textContent = zona;
+    option.dataset.value = zona;
+    menu.appendChild(option);
+  });
+
+  // Toggle menú
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  // Cerrar al clicar fuera
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
     }
   });
 
-  const zonaSelect = document.getElementById("zona-envio");
+  // Selección de zona
+  menu.addEventListener("click", (e) => {
+    if (e.target.classList.contains("dropdown-option")) {
+      const zona = e.target.dataset.value;
+      toggle.textContent = zona;
+      dropdown.dataset.selected = zona;
+      dropdown.classList.remove("open");
 
-  zonaSelect.addEventListener("change", () => {
-    const zona = zonaSelect.value;
-    if (!zona) return;
+      localStorage.setItem("zonaSeleccionada", zona);
 
-    // Calcular peso total
-    const pesoTotal = carrito.reduce(
-      (sum, item) => sum + item.peso * item.cantidad,
-      0
-    );
-
-    // Calcular nuevo coste de envío
-    const envioCoste = calcularEnvioCoste(pesoTotal, zona);
-
-    // Actualizar DOM
-    document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
-
-    const subtotal = carrito.reduce(
-      (sum, item) => sum + item.precio * item.cantidad,
-      0
-    );
-    const total = subtotal + envioCoste;
-
-    document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
+      // Recalcular totales
+      const pesoTotal = carrito.reduce(
+        (sum, item) => sum + item.peso * item.cantidad,
+        0
+      );
+      const envioCoste = calcularEnvioCoste(pesoTotal, zona);
+      const subtotal = carrito.reduce(
+        (sum, item) => sum + item.precio * item.cantidad,
+        0
+      );
+      const feeRate = 0.014;
+      const baseTotal = subtotal + envioCoste;
+      const total = baseTotal / (1 - feeRate);
+      const comision = total * feeRate;             // 1.4% de la transacción total
+      document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
+      document.getElementById("comision").textContent = comision.toFixed(2) + "€";
+      document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
+    }
   });
-}
+});
