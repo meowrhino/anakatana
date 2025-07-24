@@ -1,4 +1,6 @@
 // === 1. ESTADO DEL CARRITO ===
+// *** nueva variable para “recordar” la última zona ***
+let zonaSeleccionada = "";
 const carritoGuardado = localStorage.getItem("carrito");
 const carrito = carritoGuardado ? JSON.parse(carritoGuardado) : [];
 
@@ -39,78 +41,96 @@ function actualizarContadorCarrito() {
   }
 }
 
+/// === 3. RENDER + LÓGICA DE POPUP CARRITO ===
+
+// 3.1. Calcula subtotal y peso total
+function calcularSubtotales(carrito) {
+  return carrito.reduce(
+    (acc, item) => {
+      acc.subtotal += item.precio * item.cantidad;
+      acc.pesoTotal += item.peso * item.cantidad;
+      return acc;
+    },
+    { subtotal: 0, pesoTotal: 0 }
+  );
+}
+
+const TARIFAS_ENVIO = {
+  espana: [4, 6, 8],
+  islas: [6, 8, 10],
+  europa: [8, 10, 14],
+  eeuu: [12, 16, 22],
+  latam: [10, 14, 20],
+  japon: [14, 18, 26],
+};
+
+// 3.2. Coste de envío según zona y peso
+function calcularEnvioCoste(peso, zona) {
+  let rango = peso <= 1 ? 0 : peso <= 2.5 ? 1 : 2;
+  return TARIFAS_ENVIO[zona]?.[rango] ?? null;
+}
+
+// 3.3. Crea y muestra el overlay + modal
+
+/**
+ * Muestra el popup de carrito:
+ * 1) Recalcula totales, 2) Crea DOM, 3) Añade listeners, 4) Inserta en body.
+ */
 function abrirCarrito() {
   if (document.getElementById("popup-carrito")) return;
 
+  // 1) recalcular totales
+  const { subtotal, pesoTotal } = calcularSubtotales(carrito);
+
+  // 2) overlay y modal
   const overlay = document.createElement("div");
   overlay.id = "popup-carrito";
   overlay.className = "popup-carrito";
-
   const modal = document.createElement("div");
   modal.className = "carrito-modal";
 
-  const cerrarBtn = document.createElement("button");
-  cerrarBtn.className = "carrito-cerrar";
-  cerrarBtn.textContent = "✕";
-  cerrarBtn.addEventListener("click", () => overlay.remove());
+  // boton cerrar
+  const btnCerrar = document.createElement("button");
+  btnCerrar.className = "carrito-cerrar";
+  btnCerrar.textContent = "✕";
+  btnCerrar.addEventListener("click", () => overlay.remove());
+  modal.appendChild(btnCerrar);
 
+  // 3) lista de productos
   const lista = document.createElement("div");
   lista.className = "carrito-lista";
-
-  let pesoTotal = 0;
-  let subtotal = 0;
-
-  carrito.forEach((item) => {
-    const itemDiv = document.createElement("div");
-    itemDiv.className = "carrito-producto";
-
-    const img = document.createElement("img");
-    img.src = item.img;
-    img.alt = item.nombre;
-    img.className = "carrito-img";
-
-    const info = document.createElement("div");
-    info.className = "carrito-info";
-    info.innerHTML = `
-      <p class="carrito-nombre">${item.nombre}</p>
-      <p class="carrito-detalles">${item.talla ? `size: ${item.talla}` : ""}</p>
-      <p class="carrito-precio">${item.precio.toFixed(
-      2
-    )}€</p>
+  carrito.forEach((item, i) => {
+    const div = document.createElement("div");
+    div.className = "carrito-producto";
+    div.innerHTML = `
+      <img src="${item.img}" alt="${item.nombre}" class="carrito-img"/>
+      <div class="carrito-info">
+        <p class="carrito-nombre">${item.nombre}</p>
+        <p class="carrito-detalles">${item.talla || ""}</p>
+        <p class="carrito-precio">${(item.precio * item.cantidad).toFixed(
+          2
+        )}€</p>
+      </div>
+      <button class="carrito-eliminar">✕</button>
     `;
-
-    // 1. Crear botón “X”
-    const removeBtn = document.createElement("button");
-    removeBtn.textContent = "✕";
-    removeBtn.className = "carrito-eliminar";
-    // 2. Acción al hacer clic
-    removeBtn.addEventListener("click", () => {
-      // Elimina el producto del array
-      carrito.splice(index, 1);
-      // Guarda en localStorage
+    div.querySelector("button").addEventListener("click", () => {
+      carrito.splice(i, 1);
       localStorage.setItem("carrito", JSON.stringify(carrito));
-      // Actualiza contador y vuelve a abrir el popup
       actualizarContadorCarrito();
       overlay.remove();
       abrirCarrito();
     });
-
-    subtotal += item.precio * item.cantidad;
-    pesoTotal += item.peso * item.cantidad;
-
-    itemDiv.appendChild(img);
-    itemDiv.appendChild(info);
-    itemDiv.appendChild(removeBtn);
-
-    lista.appendChild(itemDiv);
+    lista.appendChild(div);
   });
+  modal.appendChild(lista);
 
+  // 4) sección envío
   const envioWrapper = document.createElement("div");
   envioWrapper.className = "carrito-envio";
   envioWrapper.innerHTML = `
-    <label for="envio-zona">estimar envío</label>
+    <label for="envio-zona">Estimar envío</label>
     <select id="envio-zona">
-      <option value="">elige zona</option>
+      <option value=>elige zona</option>
       <option value="espana">España</option>
       <option value="islas">Islas</option>
       <option value="europa">Europa</option>
@@ -121,55 +141,56 @@ function abrirCarrito() {
     <p id="envio-estimado"></p>
   `;
 
-  const totalTexto = document.createElement("p");
-  totalTexto.className = "carrito-total";
-  totalTexto.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
+  // — aquí fijamos la zona que hubiera quedado la última vez —
+  if (zonaSeleccionada) {
+    envioWrapper.querySelector("#envio-zona").value = zonaSeleccionada;
+    envioWrapper
+      .querySelector("#envio-zona")
+      // Disparamos manualmente 'change' para recalcular total con la zona anterior
+      .dispatchEvent(new Event("change"));
+  }
 
+  modal.appendChild(envioWrapper);
+
+  // 5) texto de totales + botón pago
+  const resumen = document.createElement("p");
+  resumen.className = "carrito-total";
+  resumen.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
   const btnPagar = document.createElement("button");
   btnPagar.className = "carrito-pagar";
-  btnPagar.textContent = "PAGAR";
+  btnPagar.textContent = "IR AL PAGO";
+  btnPagar.addEventListener("click", () => {
+    window.location.href = "checkout.html";
+  });
+  modal.append(resumen, btnPagar);
 
-  modal.appendChild(cerrarBtn);
-  modal.appendChild(lista);
-  modal.appendChild(envioWrapper);
-  modal.appendChild(totalTexto);
-  modal.appendChild(btnPagar);
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  // Lógica de cálculo de envío
-  document.getElementById("envio-zona").addEventListener("change", (e) => {
-    const zona = e.target.value;
-    const precios = {
-      espana: [4, 6, 8],
-      islas: [6, 8, 10],
-      europa: [8, 10, 14],
-      eeuu: [12, 16, 22],
-      latam: [10, 14, 20],
-      japon: [14, 18, 26],
-    };
-
-    let rango = 0;
-    if (pesoTotal <= 1) rango = 0;
-    else if (pesoTotal <= 2.5) rango = 1;
-    else rango = 2;
-
-    const precio = precios[zona]?.[rango];
-    const envioTexto = document.getElementById("envio-estimado");
-    if (precio != null) {
-      envioTexto.textContent = `Envío estimado: ${precio.toFixed(2)}€`;
-      totalTexto.textContent = `Total estimado: ${(subtotal + precio).toFixed(
-        2
-      )}€`;
+  // 6) listener de cambio de zona (¡antes de disparar el evento!)
+  const selectZona = envioWrapper.querySelector("#envio-zona");
+  selectZona.addEventListener("change", (e) => {
+    zonaSeleccionada = e.target.value; // guardamos
+    const coste = calcularEnvioCoste(pesoTotal, zonaSeleccionada);
+    const textoEnvio = envioWrapper.querySelector("#envio-estimado");
+    if (coste !== null) {
+      textoEnvio.textContent = `Envío estimado: ${coste.toFixed(2)}€`;
+      resumen.textContent = `Total estimado: ${(subtotal + coste).toFixed(2)}€`;
     } else {
-      envioTexto.textContent = "";
-      totalTexto.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
+      textoEnvio.textContent = "";
+      resumen.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
     }
   });
+
+  // Ahora sí reponemos la zona anterior y forzamos el cálculo
+  if (zonaSeleccionada) {
+    selectZona.value = zonaSeleccionada;
+    selectZona.dispatchEvent(new Event("change"));
+  }
+
+  // 7) montar en DOM
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
 }
 
-// Para asegurarse que el contador se actualiza cuando ya se haya creado en el DOM
+// 3.4. Observer para inicializar contador sólo cuando el DOM esté listo
 const observer = new MutationObserver(() => {
   const contador = document.getElementById("carrito-count");
   if (contador) {
@@ -178,37 +199,3 @@ const observer = new MutationObserver(() => {
   }
 });
 observer.observe(document.body, { childList: true, subtree: true });
-
-// === 4. OPCIONAL: ENVÍO DE PEDIDO (a futuro) ===
-
-/*
-document.getElementById("hacer-pedido").addEventListener("click", async () => {
-  if (carrito.length === 0) {
-    alert("El carrito está vacío.");
-    return;
-  }
-
-  const pedido = {
-    carrito: carrito.map(({ id, cantidad }) => ({ id, cantidad })),
-  };
-
-  const respuesta = await fetch("http://localhost:3000/pedido", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(pedido),
-  });
-
-  const resultado = await respuesta.json();
-
-  if (resultado.success) {
-    alert(resultado.mensaje);
-    carrito.length = 0; // Vaciar carrito tras pedido exitoso
-    actualizarCarrito();
-  } else {
-    alert("Hubo un error al realizar el pedido.");
-  }
-});
-
-*/

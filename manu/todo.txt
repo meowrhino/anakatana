@@ -37,6 +37,7 @@ document.getElementById("orden").addEventListener("change", e => {
 
 •	Extrae la parte de “fetch productos” a una variable de más ámbito para poder reutilizar productos en cualquier reorder/filter.
 
+
 	5.	Extender el popup de carrito con “borrar ítem”
 Qué: Añadir a cada línea del carrito una minicrocx (✕) que permita eliminar ese producto.
 Por qué: Mejora UX.
@@ -47,6 +48,8 @@ Cómo:
 	2.	Filtrar el array global: carrito = carrito.filter(i=>i.id!==item.id || i.talla!==item.talla); (o splicearlo).
 	3.	Llamar a actualizarCarrito() y actualizarContadorCarrito().
 	4.	Remover del DOM el itemDiv.
+
+
 	6.	Revisar uso de MutationObserver vs llamada directa
 Qué: Quitar el observer y actualizar el contador justo después de insertar los botones de nav.
 Por qué: Es más directo y menos costoso.
