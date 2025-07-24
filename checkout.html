@@ -28,26 +28,26 @@
 
     <section class="checkout-formulario">
       <form id="form-checkout">
-        <div class="">
+        <div class="largo">
           <label for="nombre">full name</label>
-          <input type="text" id="nombre" name="nombre" class="largo" required>
+          <input type="text" id="nombre" name="nombre" required>
         </div>
 
-        <div class="">
+        <div class="largo">
           <label for="direccion">dirección</label>
-          <input type="text" id="direccion" name="direccion" class="largo" required>
+          <input type="text" id="direccion" name="direccion" required>
         </div>
 
-        <div class="">
+        <div class="corto">
           <label for="ciudad">código postal</label>
-          <input type="text" id="ciudad" name="ciudad" class="corto" required>
+          <input type="text" id="ciudad" name="ciudad" required>
         </div>
 
-        <div class="">
-          <label for="pais">país</label>
-          <input type="text" id="pais" name="pais" class="corto" required>
+        <div class="corto">
+          <label for="pais">pais</label>
+          <input type="text" id="pais" name="pais" required>
         </div>
-
+        <!--
         <div class="">
           <label for="tarjeta">Número de tarjeta</label>
           <input type="text" id="tarjeta" name="tarjeta" class="largo" maxlength="19" placeholder="XXXX XXXX XXXX XXXX"
@@ -63,18 +63,11 @@
           <label for="cvv">CVV</label>
           <input type="text" id="cvv" name="cvv" class="cortisimo" maxlength="4" required>
         </div>
-
-        <div class="">
-          <label for="zona-envio">Zona de envío</label>
-          <select id="zona-envio" class="largo" required>
-            <option value="">elige zona</option>
-            <option value="espana">España</option>
-            <option value="islas">Islas</option>
-            <option value="europa">Europa</option>
-            <option value="eeuu">EEUU</option>
-            <option value="latam">LATAM</option>
-            <option value="japon">Japón</option>
-          </select>
+-->
+        <div class="largo" id="zonaDropdown" data-selected="">
+          <label for="zona-envio">zona de envío</label>
+          <div class="dropdown dropdown-toggle">elige zona</div>
+          <div class="dropdown-menu" id="zonaOpciones zona-envio"></div>
         </div>
 
         <button type="submit" class="btn-añadir-carrito largo">Realizar pedido</button>

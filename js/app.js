@@ -193,3 +193,25 @@ const observer = new MutationObserver(() => {
   }
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
+
+function actualizarTotales() {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const zona = document.getElementById("zonaDropdown")?.dataset?.selected || "";
+
+  const { subtotal, pesoTotal } = calcularSubtotales(carrito);
+  const envioCoste = calcularEnvioCoste(pesoTotal, zona) || 0;
+
+  const totalSinComision = subtotal + envioCoste;
+  const comision = totalSinComision * 0.014;
+  const totalConComision = totalSinComision + comision;
+
+  // Actualizar en HTML
+  document.getElementById("total-items").textContent = carrito.length;
+  document.getElementById("subtotal").textContent = subtotal.toFixed(2) + "€";
+  document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
+  document.getElementById("total-pago").textContent = totalConComision.toFixed(2) + "€";
+}
+
+// Exponerla globalmente
+window.actualizarTotales = actualizarTotales;

@@ -78,7 +78,7 @@ function initCheckout() {
       (sum, item) => sum + item.precio * item.cantidad,
       0
     );
-    const zona = document.getElementById("zona-envio").value;
+    const zona = document.getElementById("zonaDropdown").dataset.selected;
     const pesoTotal = carrito.reduce(
       (sum, item) => sum + item.peso * item.cantidad,
       0
