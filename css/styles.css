@@ -227,6 +227,38 @@ a:hover {
   font-weight: bold;
 }
 
+/* dentro de tu CSS existente */
+#popup-sort .carrito-modal {
+  position: relative;
+  overflow: visible;
+}
+
+#popup-sort .sort-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#popup-sort .sort-panel button {
+  all: unset;
+
+  padding: 0.8rem 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#popup-sort .sort-panel button:hover {
+  background: var(--grisAnaKtana);
+}
+
+/* coloca la X fuera solo en el popup-sort */
+#popup-sort .carrito-cerrar {
+  position: absolute;
+  top: -2rem;
+  right: -1.5rem;
+}
+
 /*HOME: PRODUCTO SOLDOUT*/
 
 .soldout-overlay {

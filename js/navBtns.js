@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <a href="#" id="btn-carrito" class="boton-fijo">
         carrito<sup id="carrito-count"></sup>
       </a>
-      <a href="#" id="btn-filtro" class="boton-fijo">filtrar</a>
+      <a href="#" id="btn-ordenar" class="boton-fijo">ordenar</a>
     `;
     bottomRight.innerHTML = `
       <a href="about.html" class="boton-fijo">about</a>
@@ -73,9 +73,8 @@ document.addEventListener("click", (e) => {
     abrirCarrito();
   }
 
-  if (target.id === "btn-filtro") {
+  if (target.id === "btn-ordenar") {
     e.preventDefault();
-    toggleFiltro();
+    abrirSort();
   }
 });
-
