@@ -601,6 +601,7 @@ body[data-page-type="about"] {
 }
 
 .carrito-producto {
+  position: relative;
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -611,6 +612,21 @@ body[data-page-type="about"] {
   height: 64px;
   object-fit: cover;
   border: 1px solid white;
+}
+
+.popup-carrito .carrito-eliminar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--grisAnaKtana);
+}
+
+.popup-carrito .carrito-eliminar:hover {
+  color: #333;
 }
 
 .carrito-info {

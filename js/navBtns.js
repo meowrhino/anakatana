@@ -79,33 +79,3 @@ document.addEventListener("click", (e) => {
   }
 });
 
-
-// Crea e inyecta el panel de filtros si no existe
-function initFiltroPanel() {
-  let panel = document.getElementById("filtros-panel");
-  if (!panel) {
-    panel = document.createElement("aside");
-    panel.id = "filtros-panel";
-    panel.className = "fixed top-0 right-0 h-full w-64 bg-white transform translate-x-full transition-transform z-50";
-    panel.innerHTML = `
-      <div class="p-4">
-        <h2 class="text-lg font-semibold mb-4">Filtrar</h2>
-        <label for="filtro-coleccion" class="block text-sm font-medium">Colección</label>
-        <select id="filtro-coleccion" class="mt-1 block w-full border rounded p-2 mb-4">
-          <option value="">Todas</option>
-        </select>
-        <label for="filtro-tipo" class="block text-sm font-medium">Tipo</label>
-        <select id="filtro-tipo" class="mt-1 block w-full border rounded p-2">
-          <option value="">Todos</option>
-        </select>
-      </div>
-    `;
-    document.body.appendChild(panel);
-  }
-}
-
-// Abre o cierra el panel de filtros
-function toggleFiltro() {
-  const panel = document.getElementById("filtros-panel");
-  if (panel) panel.classList.toggle("translate-x-full");
-}

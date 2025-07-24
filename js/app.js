@@ -74,16 +74,34 @@ function abrirCarrito() {
     info.innerHTML = `
       <p class="carrito-nombre">${item.nombre}</p>
       <p class="carrito-detalles">${item.talla ? `size: ${item.talla}` : ""}</p>
-      <p class="carrito-precio">${item.cantidad} × ${item.precio.toFixed(
+      <p class="carrito-precio">${item.precio.toFixed(
       2
     )}€</p>
     `;
+
+    // 1. Crear botón “X”
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "✕";
+    removeBtn.className = "carrito-eliminar";
+    // 2. Acción al hacer clic
+    removeBtn.addEventListener("click", () => {
+      // Elimina el producto del array
+      carrito.splice(index, 1);
+      // Guarda en localStorage
+      localStorage.setItem("carrito", JSON.stringify(carrito));
+      // Actualiza contador y vuelve a abrir el popup
+      actualizarContadorCarrito();
+      overlay.remove();
+      abrirCarrito();
+    });
 
     subtotal += item.precio * item.cantidad;
     pesoTotal += item.peso * item.cantidad;
 
     itemDiv.appendChild(img);
     itemDiv.appendChild(info);
+    itemDiv.appendChild(removeBtn);
+
     lista.appendChild(itemDiv);
   });
 
