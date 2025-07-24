@@ -70,3 +70,46 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
+
+// Añadir Stripe (usa la clave secreta en Render!)
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Endpoint para crear sesión de Stripe Checkout
+app.post('/crear-sesion', async (req, res) => {
+  const { carrito, envio } = req.body;
+
+  // Preparar los items para Stripe Checkout
+  const itemsStripe = carrito.map(item => ({
+    price_data: {
+      currency: 'eur',
+      product_data: { name: item.nombre },
+      unit_amount: Math.round(item.precio * 100),
+    },
+    quantity: item.cantidad,
+  }));
+
+  // Añadir envío como un item extra
+  itemsStripe.push({
+    price_data: {
+      currency: 'eur',
+      product_data: { name: 'Envío' },
+      unit_amount: Math.round(envio * 100),
+    },
+    quantity: 1,
+  });
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: itemsStripe,
+      mode: 'payment',
+      success_url: 'https://tuweb.com/exito',
+      cancel_url: 'https://tuweb.com/error',
+    });
+
+    res.json({ sessionId: session.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
