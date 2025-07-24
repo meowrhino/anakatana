@@ -64,21 +64,6 @@ function calcularSubtotales(carrito) {
   );
 }
 
-const TARIFAS_ENVIO = {
-  espana: [4, 6, 8],
-  islas: [6, 8, 10],
-  europa: [8, 10, 14],
-  eeuu: [12, 16, 22],
-  latam: [10, 14, 20],
-  japon: [14, 18, 26],
-};
-
-// 3.2. Coste de envío según zona y peso
-function calcularEnvioCoste(peso, zona) {
-  let rango = peso <= 1 ? 0 : peso <= 2.5 ? 1 : 2;
-  return TARIFAS_ENVIO[zona]?.[rango] ?? null;
-}
-
 // 3.3. Crea y muestra el overlay + modal
 
 /**

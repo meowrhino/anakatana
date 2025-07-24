@@ -1,12 +1,10 @@
-// checkout.js - lógica de la página Checkout
-
 document.addEventListener("DOMContentLoaded", initCheckout);
 
 function initCheckout() {
   // 1. Obtener carrito de localStorage
 
   const lista = document.getElementById("lista-carrito");
-  lista.innerHTML = "";   
+  lista.innerHTML = "";
   let subtotal = 0;
   let totalItems = 0;
 
@@ -41,8 +39,8 @@ function initCheckout() {
     });
     row.querySelector(".btn-eliminar").addEventListener("click", () => {
       carrito.splice(index, 1);
-      actualizarCarrito(); 
-      actualizarContadorCarrito(); 
+      actualizarCarrito();
+      actualizarContadorCarrito();
       initCheckout();
     });
     lista.appendChild(row);
@@ -57,16 +55,80 @@ function initCheckout() {
     (subtotal + envioCoste).toFixed(2) + "€";
 
   // 4. Manejar envío del formulario
+  // Reemplaza sólo la sección del formulario (sección 4) en checkout.js por esto:
+
+  const stripe = Stripe(
+    "pk_test_51RoOoQFQj6tWq4QNfffOAGTbBIexuM9SlmkQwRAweiulKua0pt7OqE2m5XpBxLtEQcs42NVp0LKEt2G1QVtf0s9i00kN3iJFCk"
+  ); // ← Cambia aquí tu clave pública
+
+  // Manejar envío del formulario
   const form = document.getElementById("form-checkout");
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    // Aquí puedes enviar los datos a tu servidor
-    alert(
-      `¡Gracias por tu compra, ${form.nombre.value}!\nTotal: ${(
-        subtotal + envioCoste
-      ).toFixed(2)}€`
+
+    // Preparar datos reales del carrito desde localStorage (ya lo tienes!)
+    const carritoStripe = carrito.map((item) => ({
+      nombre: item.nombre,
+      precio: item.precio,
+      cantidad: item.cantidad,
+    }));
+
+    // Obtienes costes ya calculados en tu lógica
+    const subtotal = carrito.reduce(
+      (sum, item) => sum + item.precio * item.cantidad,
+      0
     );
-    localStorage.removeItem("carrito");
-    window.location.href = "index.html";
+    const zona = document.getElementById("zona-envio").value;
+    const pesoTotal = carrito.reduce(
+      (sum, item) => sum + item.peso * item.cantidad,
+      0
+    );
+    const envioCoste = calcularEnvioCoste(pesoTotal, zona);
+    try {
+      // Crear sesión de pago en Render
+      const response = await fetch(
+        "https://anakatana-backend.onrender.com/crear-sesion",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ carrito: carritoStripe, envio: envioCoste }),
+        }
+      );
+
+      const data = await response.json();
+
+      // Redirigir a Stripe Checkout
+      await stripe.redirectToCheckout({ sessionId: data.sessionId });
+    } catch (error) {
+      console.error(error);
+      alert("Error al procesar el pago. Intenta de nuevo.");
+    }
+  });
+
+  const zonaSelect = document.getElementById("zona-envio");
+
+  zonaSelect.addEventListener("change", () => {
+    const zona = zonaSelect.value;
+    if (!zona) return;
+
+    // Calcular peso total
+    const pesoTotal = carrito.reduce(
+      (sum, item) => sum + item.peso * item.cantidad,
+      0
+    );
+
+    // Calcular nuevo coste de envío
+    const envioCoste = calcularEnvioCoste(pesoTotal, zona);
+
+    // Actualizar DOM
+    document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
+
+    const subtotal = carrito.reduce(
+      (sum, item) => sum + item.precio * item.cantidad,
+      0
+    );
+    const total = subtotal + envioCoste;
+
+    document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
   });
 }
