@@ -1,13 +1,13 @@
+let productosHome = []; // almacena la lista original
+
+// 1. Cargar productos y ordenar alfabéticamente al inicio
+document.addEventListener("DOMContentLoaded", cargarProductos);
+
 async function cargarProductos() {
   const respuesta = await fetch("./productos.json");
-  const productos = await respuesta.json();
-  const contenedor = document.getElementById("galeria-productos");
+  productosHome = await respuesta.json();
 
-  // Inicializar filtros con los datos de productos
-  //initFilters(productos);
-
-  // Renderizar inicialmente todos los productos
-  renderProductos(productos, contenedor);
+  // Renderiza inicialmente A→Z
   applySort("name-asc");
 }
 
@@ -88,149 +88,6 @@ function renderProductos(productos, contenedor) {
   });
 }
 
-// Inicializa y gestiona los filtros de colección y tipo
-function initFilters(productos) {
-  const filtroColeccion = document.getElementById("filtro-coleccion");
-  const filtroTipo = document.getElementById("filtro-tipo");
-
-  if (!filtroColeccion || !filtroTipo) return;
-
-  // Obtener valores únicos
-  const colecciones = Array.from(
-    new Set(productos.map((p) => p.coleccion).filter(Boolean))
-  );
-  const tipos = Array.from(
-    new Set(productos.map((p) => p.tipo).filter(Boolean))
-  );
-
-  // Populate selects
-  colecciones.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    filtroColeccion.appendChild(opt);
-  });
-  tipos.forEach((t) => {
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
-    filtroTipo.appendChild(opt);
-  });
-
-  // Manejar cambios de filtros
-  [filtroColeccion, filtroTipo].forEach((select) => {
-    select.addEventListener("change", () => applyFilters(productos));
-  });
-}
-
-// Filtra y renderiza según selección
-function applyFilters(productos) {
-  const filtroColeccion = document.getElementById("filtro-coleccion");
-  const filtroTipo = document.getElementById("filtro-tipo");
-  const contenedor = document.getElementById("galeria-productos");
-
-  let filtrados = productos;
-
-  const colecValue = filtroColeccion.value;
-  const tipoValue = filtroTipo.value;
-
-  if (colecValue) {
-    filtrados = filtrados.filter((p) => p.coleccion === colecValue);
-  }
-  if (tipoValue) {
-    filtrados = filtrados.filter((p) => p.tipo === tipoValue);
-  }
-
-  renderProductos(filtrados, contenedor);
-}
-
-/**ordenar proudctos: */
-// Asegurar que al cargar el DOM se inicie la carga
-document.addEventListener("DOMContentLoaded", cargarProductos);
-
-let productosHome = []; // almacena la lista original
-
-async function cargarProductos() {
-  const resp = await fetch("./productos.json");
-  productosHome = await resp.json();
-  renderProductos(productosHome, document.getElementById("galeria-productos"));
-}
-
-/*
-
-function toggleSort() {
-  // Crear/desplegar un pequeño panel con opciones:
-  // [Precio ↑], [Precio ↓], [Título A-Z], [Título Z-A]
-  const existing = document.getElementById("sort-panel");
-  if (existing) return existing.remove(); // cerrar
-  const panel = document.createElement("div");
-  panel.id = "sort-panel";
-  panel.className = "fixed bottom-20 right-3 p-4 bg-black border border-white";
-  panel.innerHTML = `
-    <button data-ord="price-asc">Precio ↑</button>
-    <button data-ord="price-desc">Precio ↓</button>
-    <button data-ord="name-asc">Título A-Z</button>
-    <button data-ord="name-desc">Título Z-A</button>
-  `;
-  panel.querySelectorAll("button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      applySort(btn.dataset.ord);
-      panel.remove();
-    });
-  });
-  document.body.appendChild(panel);
-}
-*/
-
-// home.js
-
-function abrirSort() {
-  // 1) si ya está abierto, ciérralo
-  if (document.getElementById("popup-sort")) return;
-
-  // 2) crea overlay + modal
-  const overlay = document.createElement("div");
-  overlay.id = "popup-sort";
-  overlay.className = "popup-carrito";
-
-  const modal = document.createElement("div");
-  modal.className = "carrito-modal";
-  modal.style.maxWidth = "300px";
-  modal.style.padding = "1rem";
-  modal.style.position = "relative";
-
-  // 3) botón cerrar
-  const btnCerrar = document.createElement("button");
-  btnCerrar.className = "carrito-cerrar";
-  btnCerrar.textContent = "✕";
-  btnCerrar.addEventListener("click", () => overlay.remove());
-  modal.appendChild(btnCerrar);
-
-  // 4) opciones de ordenación (todas en un mismo panel)
-  const panel = document.createElement("div");
-  panel.className = "sort-panel";
-  panel.innerHTML = `
-  <button data-ord="rebajas-first">rebajas primero</button>
-  <button data-ord="soldout-last">sold out último</button>
-  <button data-ord="category-order">top bottom acc</button>
-    <button data-ord="price-asc">precio ↑</button>
-    <button data-ord="price-desc">precio ↓</button>
-    <button data-ord="name-asc">A-Z</button>
-    <button data-ord="name-desc">Z-A</button>
-  `;
-  panel.querySelectorAll("button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      applySort(btn.dataset.ord);
-      overlay.remove();
-    });
-  });
-  modal.appendChild(panel);
-
-  // 5) monta en el DOM
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-}
-
 function applySort(criteria) {
   const sorted = [...productosHome];
 
@@ -282,4 +139,51 @@ function applySort(criteria) {
   }
 
   renderProductos(sorted, document.getElementById("galeria-productos"));
+}
+
+function abrirSort() {
+  // 1) si ya está abierto, ciérralo
+  if (document.getElementById("popup-sort")) return;
+
+  // 2) crea overlay + modal
+  const overlay = document.createElement("div");
+  overlay.id = "popup-sort";
+  overlay.className = "popup-carrito";
+
+  const modal = document.createElement("div");
+  modal.className = "carrito-modal";
+  modal.style.maxWidth = "300px";
+  modal.style.padding = "1rem";
+  modal.style.position = "relative";
+
+  // 3) botón cerrar
+  const btnCerrar = document.createElement("button");
+  btnCerrar.className = "carrito-cerrar";
+  btnCerrar.textContent = "✕";
+  btnCerrar.addEventListener("click", () => overlay.remove());
+  modal.appendChild(btnCerrar);
+
+  // 4) opciones de ordenación (todas en un mismo panel)
+  const panel = document.createElement("div");
+  panel.className = "sort-panel";
+  panel.innerHTML = `
+  <button data-ord="rebajas-first">rebajas primero</button>
+  <button data-ord="soldout-last">sold out último</button>
+  <button data-ord="category-order">top bottom acc</button>
+    <button data-ord="price-asc">precio ↑</button>
+    <button data-ord="price-desc">precio ↓</button>
+    <button data-ord="name-asc">A-Z</button>
+    <button data-ord="name-desc">Z-A</button>
+  `;
+  panel.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applySort(btn.dataset.ord);
+      overlay.remove();
+    });
+  });
+  modal.appendChild(panel);
+
+  // 5) monta en el DOM
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
 }
