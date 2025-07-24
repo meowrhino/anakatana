@@ -68,14 +68,37 @@ function initCheckout() {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      if (
+        !form.elements["nombre"] ||
+        !form.elements["direccion"] ||
+        !form.elements["ciudad"] ||
+        !form.elements["pais"]
+      ) {
+        alert(
+          "Faltan campos obligatorios en el formulario. Por favor, revisa el HTML."
+        );
+        return;
+      }
+
       // Recoger datos de dirección del formulario
       const addressData = {
-        nombreCliente: form.elements["nombreCliente"].value,
+        nombreCliente: form.elements["nombre"].value,
         direccion: form.elements["direccion"].value,
         ciudad: form.elements["ciudad"].value,
-        codigoPostal: form.elements["codigoPostal"].value,
-        pais: form.elements["pais"].value
+        pais: form.elements["pais"].value,
       };
+
+      if (
+        !addressData.nombreCliente ||
+        !addressData.direccion ||
+        !addressData.ciudad ||
+        !addressData.pais
+      ) {
+        alert(
+          "Por favor, rellena todos los campos de dirección antes de continuar."
+        );
+        return;
+      }
 
       // Preparar datos reales del carrito...
       const carritoStripe = carrito.map((item) => ({
@@ -106,7 +129,7 @@ function initCheckout() {
               carrito: carritoStripe,
               envio: envioCoste,
               direccion: addressData,
-              fecha: new Date().toISOString()
+              fecha: new Date().toISOString(),
             }),
           }
         );
@@ -137,7 +160,8 @@ function initCheckout() {
       const envioCoste = calcularEnvioCoste(pesoTotal, zona);
 
       // Actualizar DOM
-      document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
+      document.getElementById("envio").textContent =
+        envioCoste.toFixed(2) + "€";
 
       const subtotal = carrito.reduce(
         (sum, item) => sum + item.precio * item.cantidad,
@@ -147,8 +171,10 @@ function initCheckout() {
       const baseTotal = subtotal + envioCoste;
       const total = baseTotal / (1 - feeRate);
       const comision = total * feeRate;
-      document.getElementById("comision").textContent = comision.toFixed(2) + "€";
-      document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
+      document.getElementById("comision").textContent =
+        comision.toFixed(2) + "€";
+      document.getElementById("total-pago").textContent =
+        total.toFixed(2) + "€";
     });
   }
 }
@@ -209,10 +235,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const feeRate = 0.014;
       const baseTotal = subtotal + envioCoste;
       const total = baseTotal / (1 - feeRate);
-      const comision = total * feeRate;             // 1.4% de la transacción total
-      document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
-      document.getElementById("comision").textContent = comision.toFixed(2) + "€";
-      document.getElementById("total-pago").textContent = total.toFixed(2) + "€";
+      const comision = total * feeRate; // 1.4% de la transacción total
+      document.getElementById("envio").textContent =
+        envioCoste.toFixed(2) + "€";
+      document.getElementById("comision").textContent =
+        comision.toFixed(2) + "€";
+      document.getElementById("total-pago").textContent =
+        total.toFixed(2) + "€";
     }
   });
 });
