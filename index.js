@@ -103,8 +103,8 @@ app.post('/crear-sesion', async (req, res) => {
       payment_method_types: ['card'],
       line_items: itemsStripe,
       mode: 'payment',
-      success_url: 'https://tuweb.com/exito',
-      cancel_url: 'https://tuweb.com/error',
+      success_url: 'https://meowrhino.github.io/anakatana/gracias.html',
+      cancel_url: 'https://meowrhino.github.io/anakatana/sorry.html',
     });
 
     res.json({ sessionId: session.id });
