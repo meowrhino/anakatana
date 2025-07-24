@@ -38,6 +38,15 @@ function actualizarContadorCarrito() {
   const contador = document.getElementById("carrito-count");
   if (contador) {
     contador.textContent = total;
+
+    /*ANIMACION AL AÑADIR*/
+    // 1) Añadimos la clase que dispara la animación
+    contador.classList.add("boing");
+
+    // 2) La quitamos tras terminar (0.5s coincide con la duración)
+    setTimeout(() => {
+      contador.classList.remove("boing");
+    }, 500);
   }
 }
 
