@@ -379,17 +379,35 @@ a:hover {
 }
 /* Animación “boing” */
 @keyframes boing {
-  0%   { transform: scale(1);    opacity: 1; }
-  20%  { transform: scale(2);    opacity: 0.5; }
-  40%  { transform: scale(0.8);  opacity: 1; }
-  60%  { transform: scale(1.3);  opacity: 0.3; }
-  80%  { transform: scale(0.9);  opacity: 1; }
-  100% { transform: scale(1);    opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(2);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.3);
+    opacity: 0.3;
+  }
+  80% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 #carrito-count {
-  display: inline-block;       /* necesario para que el transform funcione */
-  transition: transform .2s;
+  display: inline-block; /* necesario para que el transform funcione */
+  transition: transform 0.2s;
 }
 
 #carrito-count.boing {
@@ -748,4 +766,167 @@ body[data-page-type="about"] {
 .carrito-pagar:hover {
   background: white;
   color: black;
+}
+
+/*CHECKOUT*/
+
+/* RESUMEN DEL PEDIDO */
+
+
+#checkout-container {
+  font-family: "IBM Plex Sans", sans-serif;
+
+  position: fixed;
+  top: 10vh;
+  bottom: 10vh;
+  left: 5vw;
+  right: 5vw;
+
+  overflow-y: auto;
+  padding: 1rem;
+
+  max-width: 1000px;
+  margin: 0 auto; /* centra horizontalmente */
+  overflow-y: auto;
+}
+
+#lista-carrito {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+
+/* LISTA DE ÍTEMS */
+.checkout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--grisAnaKtana);
+}
+
+.checkout-item-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.checkout-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 1px solid var(--grisAnaKtana);
+}
+
+.checkout-item-total {
+  font-weight: bold;
+  font-size: var(--clamp2);
+}
+
+/* ——————————————————————
+   Checkout: btn-ver / btn-eliminar
+   —————————————————————— */
+.checkout-item-actions .btn-ver,
+.checkout-item-actions .btn-eliminar {
+  all: unset; /* elimina estilos por defecto */
+  cursor: pointer;
+}
+
+/* Hover idéntico al de <a> en navegación */
+.checkout-item-actions .btn-ver:hover,
+.checkout-item-actions .btn-eliminar:hover {
+  color: var(--grisAnaKtana); /* mismo gris de tu tema */
+  animation: pumpum 1s ease-in-out infinite; /* misma animación “pumpum” */
+}
+
+.checkout-totales {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  font-size: var(--clamp2);
+}
+
+/* FORMULARIO DE ENVÍO Y PAGO */
+.checkout-formulario {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  font-family: "IBM Plex Sans", sans-serif;
+  text-align: right;
+}
+
+.checkout-formulario h2 {
+  font-size: var(--clamp2);
+  margin-bottom: 1rem;
+}
+
+.checkout-formulario label {
+  display: block;
+  margin-top: 1rem;
+  font-size: var(--clamp2);
+  text-transform: uppercase;
+}
+
+.checkout-formulario input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  background: transparent;
+  border: 1px solid var(--grisAnaKtana);
+  color: white;
+  font-family: inherit;
+  font-size: var(--clamp2);
+  box-sizing: border-box;
+}
+
+.checkout-formulario .btn-primary:hover {
+  background: var(--grisAnaKtana);
+  color: black;
+}
+
+/* ——————————————————————
+   Checkout: layout 2 columnas (Grid)
+   —————————————————————— */
+.checkout-formulario form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* .largo ocupa 2 columnas, .corto 1 */
+.checkout-formulario .largo {
+  grid-column: span 2;
+}
+.checkout-formulario .corto {
+  grid-column: span 1;
+}
+.checkout-formulario .cortisimo {
+  grid-column: span 0.5;
+}
+
+/* Asegura que labels y campos sean bloques y respeten text-align */
+.checkout-formulario label {
+  display: block;
+  text-align: right; /* si quieres el label a la derecha */
+  margin-bottom: 0.25rem;
+}
+.checkout-formulario input,
+.checkout-formulario button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* En móvil, apilar todo a 1 columna */
+@media (max-width: 600px) {
+  .checkout-formulario form {
+    grid-template-columns: 1fr;
+  }
+  .checkout-formulario .largo,
+  .checkout-formulario .corto {
+    grid-column: auto;
+  }
 }

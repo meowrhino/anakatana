@@ -40,6 +40,20 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+    // ==== checkout ====
+  if (pageType === "checkout") {
+    bottomRight.innerHTML = `
+      <a href="#" id="btn-carrito" class="boton-fijo">
+        carrito<sup id="carrito-count"></sup>
+      </a>
+    `;
+    bottomLeft.innerHTML = `
+      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+      <a href="about.html" class="boton-fijo">about</a>
+      <a href="index.html" class="boton-fijo">home</a>
+    `;
+  }
+
   // ==== ABOUT ====
   if (pageType === "about") {
     bottomRight.innerHTML = `
