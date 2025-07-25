@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "id": "20250725174438390",
+    "carrito": [
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      },
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      },
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      },
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      },
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      },
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "precio": 25,
+        "cantidad": 1
+      }
+    ],
+    "envio": 14,
+    "comision": 2.3286004056795133,
+    "direccion": {
+      "nombreCliente": "Manuel Latour Fernandez",
+      "direccion": "Carrer Peracamps 9 1o 1a",
+      "ciudad": "Barcelona",
+      "pais": "España"
+    },
+    "fecha": "2025-07-25T17:44:38.390Z",
+    "sessionId": "cs_test_b1zdsK0Eg5mgcG5PH849VyyYCtbNqmbEb2j2XoWAWlQvurCJ5F9ypVGssA"
+  }
+]
