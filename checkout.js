@@ -143,20 +143,40 @@ function initCheckout() {
         const data = await response.json();
 
         // 2️⃣ Guardamos un registro local para “gracias.js”
+        // Preparar datos para registro: solo talla por ítem y cálculo de precios en hora local
+        const carritoRecord = carrito.map(item => ({
+          nombre: item.nombre,
+          talla: item.talla || null
+        }));
+        // Calcular precios
+        const subtotalProductos = subtotal;
+        const precioEnvio = envioCoste;
+        const feeRate = 0.014;
+        const baseTotal = subtotalProductos + precioEnvio;
+        const totalConComision = baseTotal / (1 - feeRate);
+        const precioComision = totalConComision * feeRate;
+        const totalPago = subtotalProductos + precioEnvio + precioComision;
+        // ID con hora local de Barcelona
+        const now = new Date();
+        const idLocal = [
+          now.getFullYear(),
+          String(now.getMonth()+1).padStart(2,'0'),
+          String(now.getDate()).padStart(2,'0'),
+          String(now.getHours()).padStart(2,'0'),
+          String(now.getMinutes()).padStart(2,'0'),
+          String(now.getSeconds()).padStart(2,'0')
+        ].join('');
         // 🚩 Guarda el registro para gracias.js
         const purchaseRecord = {
-          id: new Date().toISOString().replace(/[^0-9]/g, ""),
-          carrito: carritoStripe,
-          envio: envioCoste,
-          comision: (() => {
-            const feeRate = 0.014;
-            const baseTotal = subtotal + envioCoste;
-            const totalWithFee = baseTotal / (1 - feeRate);
-            return totalWithFee * feeRate;
-          })(),
+          id: idLocal,
+          carrito: carritoRecord,
+          precioProductos: subtotalProductos.toFixed(2),
+          precioEnvio: precioEnvio.toFixed(2),
+          precioComision: precioComision.toFixed(2),
+          total: totalPago.toFixed(2),
           direccion: addressData,
           fecha: new Date().toISOString(),
-          sessionId: data.sessionId,
+          sessionId: data.sessionId
         };
 
         // Guardar registro antes de redirigir
