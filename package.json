@@ -19,6 +19,7 @@
   "homepage": "https://github.com/meowrhino/anakatana#readme",
   "description": "",
   "dependencies": {
+    "@octokit/rest": "^22.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "stripe": "^18.3.0"
