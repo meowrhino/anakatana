@@ -88,5 +88,26 @@
     },
     "fecha": "2025-07-25T17:53:06.390Z",
     "sessionId": "cs_test_b1WlaHARir6K8J3crNtHeyWE0Knxf1aQCjABGWJi2g1fzdncNSQ07a5CW6"
+  },
+  {
+    "id": "20250725195607",
+    "carrito": [
+      {
+        "nombre": "BALAKLAVA",
+        "talla": "one-size"
+      }
+    ],
+    "precioProductos": "60.00",
+    "precioEnvio": "8.00",
+    "precioComision": "0.97",
+    "total": "68.97",
+    "direccion": {
+      "nombreCliente": "Manuel Latour Fernandez",
+      "direccion": "Carrer Peracamps 9 1o 1a",
+      "ciudad": "Barcelona",
+      "pais": "España"
+    },
+    "fecha": "2025-07-25T17:56:07.406Z",
+    "sessionId": "cs_test_b1SK3gC0uVO4AL7XrASfPY4vYYiqQf3M416Dzm32ZEunaOfmg1fnStt0EY"
   }
 ]
