@@ -128,12 +128,39 @@ function initCheckout() {
             body: JSON.stringify({
               carrito: carritoStripe,
               envio: envioCoste,
+              // 1️⃣ Calculamos la comisión para cubrir la tarifa de Stripe
+              comision: (() => {
+                const feeRate = 0.014;
+                const baseTotal = subtotal + envioCoste;
+                const totalWithFee = baseTotal / (1 - feeRate);
+                return totalWithFee * feeRate;
+              })(),
               direccion: addressData,
               fecha: new Date().toISOString(),
             }),
           }
         );
         const data = await response.json();
+
+        // 2️⃣ Guardamos un registro local para “gracias.js”
+        // 🚩 Guarda el registro para gracias.js
+        const purchaseRecord = {
+          id: new Date().toISOString().replace(/[^0-9]/g, ""),
+          carrito: carritoStripe,
+          envio: envioCoste,
+          comision: (() => {
+            const feeRate = 0.014;
+            const baseTotal = subtotal + envioCoste;
+            const totalWithFee = baseTotal / (1 - feeRate);
+            return totalWithFee * feeRate;
+          })(),
+          direccion: addressData,
+          fecha: new Date().toISOString(),
+          sessionId: data.sessionId,
+        };
+
+        // Guardar registro antes de redirigir
+        localStorage.setItem("purchaseRecord", JSON.stringify(purchaseRecord));
         await stripe.redirectToCheckout({ sessionId: data.sessionId });
       } catch (error) {
         console.error(error);

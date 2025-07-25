@@ -1,6 +1,6 @@
 // === 1. ESTADO DEL CARRITO ===
-// *** nueva variable para “recordar” la última zona ***
-let zonaSeleccionada = "";
+// Cargar última zona seleccionada de localStorage
+let zonaSeleccionada = localStorage.getItem("zonaSeleccionada") || "";
 const carritoGuardado = localStorage.getItem("carrito");
 const carrito = carritoGuardado ? JSON.parse(carritoGuardado) : [];
 
@@ -162,6 +162,8 @@ function abrirCarrito() {
   const selectZona = envioWrapper.querySelector("#envio-zona");
   selectZona.addEventListener("change", (e) => {
     zonaSeleccionada = e.target.value; // guardamos
+    // Guardar zona seleccionada para persistencia
+    localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
     const coste = calcularEnvioCoste(pesoTotal, zonaSeleccionada);
     const textoEnvio = envioWrapper.querySelector("#envio-estimado");
     if (coste !== null) {
@@ -206,8 +208,9 @@ function actualizarTotales() {
   const comision = totalSinComision * 0.014;
   const totalConComision = totalSinComision + comision;
 
-  // Actualizar en HTML
-  document.getElementById("total-items").textContent = carrito.length;
+  // Calcular número total de ítems (sumando cantidades)
+  const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+  document.getElementById("total-items").textContent = totalItems;
   document.getElementById("subtotal").textContent = subtotal.toFixed(2) + "€";
   document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
   document.getElementById("total-pago").textContent = totalConComision.toFixed(2) + "€";

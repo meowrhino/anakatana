@@ -116,7 +116,7 @@ async function subirRegistroAGitHub(contenidoBase64, sha) {
 
 // --- Stripe Checkout: creación de sesión ---
 app.post('/crear-sesion', async (req, res) => {
-  const { carrito, envio } = req.body;
+  const { carrito, envio, comision } = req.body;
 
   // Preparar los items para Stripe Checkout
   const itemsStripe = carrito.map(item => ({
@@ -138,6 +138,18 @@ app.post('/crear-sesion', async (req, res) => {
     quantity: 1,
   });
 
+  // Añadir comisión de Stripe como ítem extra si existe
+  if (comision && comision > 0) {
+    itemsStripe.push({
+      price_data: {
+        currency: 'eur',
+        product_data: { name: 'Comisión Stripe' },
+        unit_amount: Math.round(comision * 100),
+      },
+      quantity: 1,
+    });
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -157,6 +169,8 @@ app.post('/crear-sesion', async (req, res) => {
 // --- Registro de compras en registro.json ---
 app.post('/guardar-carrito', async (req, res) => {
   const nuevoRegistro = req.body;
+  // Depurar datos recibidos
+  console.log('📝 /guardar-carrito recibe:', nuevoRegistro);
   let registros = [];
 
   // 1) Leer registros previos si existe el archivo

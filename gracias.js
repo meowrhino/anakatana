@@ -4,10 +4,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   console.log('▶ Página Gracias cargada');
 
-  // 1. Vaciar el carrito y resetear contador visual
-  localStorage.removeItem('carrito');
-  const contador = document.getElementById('carrito-count');
-  if (contador) contador.textContent = '0';
 
   // 2. Leer el objeto 'purchaseRecord' desde localStorage
   const purchaseData = localStorage.getItem('purchaseRecord');
@@ -35,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(response => {
       if (response.ok) {
         console.log('✅ Carrito guardado en el servidor correctamente.');
+        // Vaciar el carrito y resetear contador visual tras confirmar guardado
+        localStorage.removeItem('carrito');
+        const contador = document.getElementById('carrito-count');
+        if (contador) contador.textContent = '0';
         // Eliminar purchaseRecord ya procesado
         localStorage.removeItem('purchaseRecord');
       } else {
