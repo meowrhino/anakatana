@@ -43,5 +43,50 @@
     },
     "fecha": "2025-07-25T17:44:38.390Z",
     "sessionId": "cs_test_b1zdsK0Eg5mgcG5PH849VyyYCtbNqmbEb2j2XoWAWlQvurCJ5F9ypVGssA"
+  },
+  {
+    "id": "20250725175306389",
+    "carrito": [
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      },
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      },
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      },
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      },
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      },
+      {
+        "nombre": "360",
+        "precio": 36,
+        "cantidad": 1
+      }
+    ],
+    "envio": 10,
+    "comision": 3.208924949290061,
+    "direccion": {
+      "nombreCliente": "Manuel Latour Fernandez",
+      "direccion": "Carrer Peracamps 9 1o 1a",
+      "ciudad": "Barcelona",
+      "pais": "España"
+    },
+    "fecha": "2025-07-25T17:53:06.390Z",
+    "sessionId": "cs_test_b1WlaHARir6K8J3crNtHeyWE0Knxf1aQCjABGWJi2g1fzdncNSQ07a5CW6"
   }
 ]
