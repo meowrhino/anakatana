@@ -27,60 +27,8 @@
   <script src="js/envio.js"></script>
   <script src="js/app.js"></script>
   <script src="js/navBtns.js"></script>
-  <script>
-    window.onload = () => {
-      const container = document.getElementById('about-container');
-      container.scrollTop = 0;
-    };
-  </script>
+  <script src="js/gracias.js"></script>
 
-  <script>
-    // Vacía el carrito y el contador visual
-    localStorage.removeItem("carrito");
-    const contador = document.getElementById("carrito-count");
-    if (contador) contador.textContent = "0";
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('▶ Página Gracias cargada');
-
-      // 1. Leer el objeto 'purchaseRecord' desde localStorage
-      const purchaseData = localStorage.getItem('purchaseRecord');
-      if (!purchaseData) {
-        console.warn('⚠️ No se encontró purchaseRecord en localStorage');
-        return;
-      }
-      console.log('ℹ️ purchaseRecord encontrado:', purchaseData);
-
-      // 2. Parsear el JSON almacenado
-      let cartRecord;
-      try {
-        cartRecord = JSON.parse(purchaseData);
-      } catch (err) {
-        console.error('❌ Error parseando purchaseRecord:', err);
-        return;
-      }
-
-      // 3. Enviar los datos al backend con fetch POST
-      console.log('➡️ Enviando al servidor:', cartRecord);
-      fetch('https://anakatana-backend.onrender.com/guardar-carrito', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cartRecord)
-      })
-        .then(response => {
-          if (response.ok) {
-            console.log('✅ Carrito guardado en el servidor correctamente.');
-          } else {
-            console.error('❌ Error al guardar en el servidor:', response.status, response.statusText);
-          }
-        })
-        .catch(error => {
-          console.error('❌ No se pudo conectar con el servidor:', error);
-        });
-    });
-  </script>
 
 </body>
 
