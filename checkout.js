@@ -1,4 +1,29 @@
+(function(){
 document.addEventListener("DOMContentLoaded", initCheckout);
+
+// === Zonas de envío (labels) + loader de envios.json (independiente de app.js) ===
+window.LABELS_ZONA = window.LABELS_ZONA || {
+  espana: "España",
+  islas: "Islas Baleares y Canarias",
+  europa: "Europa",
+  eeuu: "Estados Unidos",
+  latam: "Latinoamérica",
+  japon: "Japón",
+  entrega_mano_bcn: "entrega en mano"
+};
+var LABELS_ZONA = window.LABELS_ZONA; // usar referencia local sin redeclarar const si ya existe
+
+function cargarTarifasEnvio(force = false) {
+  const hasTable = !!window.TARIFAS_ENVIO;
+  const hasEntrega = hasTable && Object.prototype.hasOwnProperty.call(window.TARIFAS_ENVIO, 'entrega_mano_bcn');
+  if (!force && hasTable && hasEntrega) return Promise.resolve(window.TARIFAS_ENVIO);
+  return fetch(`envios.json?v=${Date.now()}`, { cache: 'no-store' })
+    .then(r => r.json())
+    .then(d => { window.TARIFAS_ENVIO = d; return d; })
+    .catch(err => { console.error('Error cargando envios.json', err); window.TARIFAS_ENVIO = window.TARIFAS_ENVIO || {}; return window.TARIFAS_ENVIO; });
+}
+
+const FEE_RATE = 0.014; // comisión (1.4%) centralizada
 
 function initCheckout() {
   // 1. Obtener carrito de localStorage
@@ -58,7 +83,7 @@ function initCheckout() {
   // Reemplaza sólo la sección del formulario (sección 4) en checkout.js por esto:
 
   const stripe = Stripe(
-    "pk_test_51RoOoQFQj6tWq4QNfffOAGTbBIexuM9SlmkQwRAweiulKua0pt7OqE2m5XpBxLtEQcs42NVp0LKEt2G1QVtf0s9i00kN3iJFCk"
+    "pk_live_51Ls6nCLPcSoTiWwr0uMBdMDIRslS0tE6s09Rm4LOMc5UZwU1FexkUIuHfogQcVJCTcyIjZxKKtVsY4SHZE0Zykk500bPU7IDAd"
   ); // ← Cambia aquí tu clave pública
 
   // Manejar envío del formulario
@@ -130,10 +155,9 @@ function initCheckout() {
               envio: envioCoste,
               // 1️⃣ Calculamos la comisión para cubrir la tarifa de Stripe
               comision: (() => {
-                const feeRate = 0.014;
                 const baseTotal = subtotal + envioCoste;
-                const totalWithFee = baseTotal / (1 - feeRate);
-                return totalWithFee * feeRate;
+                const totalWithFee = baseTotal / (1 - FEE_RATE);
+                return totalWithFee * FEE_RATE;
               })(),
               direccion: addressData,
               fecha: new Date().toISOString(),
@@ -151,10 +175,9 @@ function initCheckout() {
         // Calcular precios
         const subtotalProductos = subtotal;
         const precioEnvio = envioCoste;
-        const feeRate = 0.014;
         const baseTotal = subtotalProductos + precioEnvio;
-        const totalConComision = baseTotal / (1 - feeRate);
-        const precioComision = totalConComision * feeRate;
+        const totalConComision = baseTotal / (1 - FEE_RATE);
+        const precioComision = totalConComision * FEE_RATE;
         const totalPago = subtotalProductos + precioEnvio + precioComision;
         // ID con hora local de Barcelona
         const now = new Date();
@@ -204,7 +227,8 @@ function initCheckout() {
       );
 
       // Calcular nuevo coste de envío
-      const envioCoste = calcularEnvioCoste(pesoTotal, zona);
+      const envioRaw = (zona === 'entrega_mano_bcn') ? 0 : calcularEnvioCoste(pesoTotal, zona);
+      const envioCoste = Number.isFinite(envioRaw) ? envioRaw : 0;
 
       // Actualizar DOM
       document.getElementById("envio").textContent =
@@ -214,16 +238,40 @@ function initCheckout() {
         (sum, item) => sum + item.precio * item.cantidad,
         0
       );
-      const feeRate = 0.014;
       const baseTotal = subtotal + envioCoste;
-      const total = baseTotal / (1 - feeRate);
-      const comision = total * feeRate;
+      const total = baseTotal / (1 - FEE_RATE);
+      const comision = total * FEE_RATE;
       document.getElementById("comision").textContent =
         comision.toFixed(2) + "€";
       document.getElementById("total-pago").textContent =
         total.toFixed(2) + "€";
     });
   }
+}
+
+// Helper para recalcular totales al elegir zona (para dropdown)
+function actualizarTotalesCheckout(zona) {
+  if (!zona) return;
+  // Calcular peso total y subtotal
+  const pesoTotal = carrito.reduce((sum, item) => sum + item.peso * item.cantidad, 0);
+  const subtotal = carrito.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+
+  // Envío: 0 si entrega en mano, si no usar la función de cálculo
+  const envioRaw = (zona === 'entrega_mano_bcn') ? 0 : calcularEnvioCoste(pesoTotal, zona);
+  const envioCoste = Number.isFinite(envioRaw) ? envioRaw : 0;
+
+  // Comisiones (mismo criterio que usas en checkout)
+  const baseTotal = subtotal + envioCoste;
+  const total = baseTotal / (1 - FEE_RATE);
+  const comision = total * FEE_RATE;
+
+  // Actualizar DOM
+  const envioEl = document.getElementById('envio');
+  const comisionEl = document.getElementById('comision');
+  const totalEl = document.getElementById('total-pago');
+  if (envioEl) envioEl.textContent = `${envioCoste.toFixed(2)}€`;
+  if (comisionEl) comisionEl.textContent = `${comision.toFixed(2)}€`;
+  if (totalEl) totalEl.textContent = `${total.toFixed(2)}€`;
 }
 
 // ---- Dropdown personalizado para zona de envío ----
@@ -236,14 +284,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!toggle || !menu) return;
 
-  // Poblar las opciones desde TARIFAS_ENVIO
+  // Poblar opciones desde envios.json
   menu.innerHTML = "";
-  Object.keys(TARIFAS_ENVIO).forEach((zona) => {
-    const option = document.createElement("div");
-    option.className = "dropdown-option";
-    option.textContent = zona;
-    option.dataset.value = zona;
-    menu.appendChild(option);
+  cargarTarifasEnvio(true).then(() => {
+    const zonas = Object.keys(window.TARIFAS_ENVIO || {});
+    // Poner entrega en mano primero
+    zonas.sort((a, b) => (a === 'entrega_mano_bcn' ? -1 : b === 'entrega_mano_bcn' ? 1 : a.localeCompare(b)));
+    zonas.forEach((zona) => {
+      const option = document.createElement("div");
+      option.className = "dropdown-option";
+      const label = (LABELS_ZONA && LABELS_ZONA[zona]) || zona.replace(/_/g, " ");
+      option.textContent = label;
+      option.dataset.value = zona;
+      menu.appendChild(option);
+    });
+
+    // Preseleccionar si hay una zona guardada válida
+    const prevZona = localStorage.getItem("zonaSeleccionada");
+    if (prevZona && (window.TARIFAS_ENVIO && window.TARIFAS_ENVIO[prevZona])) {
+      const prevLabel = (LABELS_ZONA && LABELS_ZONA[prevZona]) || prevZona.replace(/_/g, " ");
+      toggle.textContent = prevLabel;
+      dropdown.dataset.selected = prevZona;
+      actualizarTotalesCheckout(prevZona);
+    }
   });
 
   // Toggle menú
@@ -263,32 +326,16 @@ document.addEventListener("DOMContentLoaded", () => {
   menu.addEventListener("click", (e) => {
     if (e.target.classList.contains("dropdown-option")) {
       const zona = e.target.dataset.value;
-      toggle.textContent = zona;
+      const nice = (LABELS_ZONA && LABELS_ZONA[zona]) || zona.replace(/_/g, " ");
+      toggle.textContent = nice;
       dropdown.dataset.selected = zona;
       dropdown.classList.remove("open");
-
       localStorage.setItem("zonaSeleccionada", zona);
 
-      // Recalcular totales
-      const pesoTotal = carrito.reduce(
-        (sum, item) => sum + item.peso * item.cantidad,
-        0
-      );
-      const envioCoste = calcularEnvioCoste(pesoTotal, zona);
-      const subtotal = carrito.reduce(
-        (sum, item) => sum + item.precio * item.cantidad,
-        0
-      );
-      const feeRate = 0.014;
-      const baseTotal = subtotal + envioCoste;
-      const total = baseTotal / (1 - feeRate);
-      const comision = total * feeRate; // 1.4% de la transacción total
-      document.getElementById("envio").textContent =
-        envioCoste.toFixed(2) + "€";
-      document.getElementById("comision").textContent =
-        comision.toFixed(2) + "€";
-      document.getElementById("total-pago").textContent =
-        total.toFixed(2) + "€";
+      // Recalcular totales con helper
+      actualizarTotalesCheckout(zona);
     }
   });
 });
+
+})();

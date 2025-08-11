@@ -206,6 +206,31 @@
         "precioRebajas": "",
         "stock": 5,
         "soldOut": "no"
+    },
+
+         {
+        "id": 8,
+        "img": "img/UjLcjUoUE0.webp",
+        "titulo": "gatito",
+        "precio": "1,00",
+        "descripcion_corta": "",
+        "descripcion": "",
+        "peso": 1,
+        "tipo": [
+            "accesorio"
+        ],
+        "colección": "BASICS",
+        "tallas": [
+            {
+                "id": 1,
+                "descripcion": "one-size"
+            }
+        ],
+        "tallaModelo": "1",
+        "rebajas": "no",
+        "precioRebajas": "",
+        "stock": 5,
+        "soldOut": "no"
     }
     
 ]

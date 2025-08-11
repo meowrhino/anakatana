@@ -70,7 +70,6 @@
           <div class="dropdown-menu" id="zonaOpciones"></div>
         </div>
 
-        <button type="submit" class="btn-añadir-carrito largo">Realizar pedido</button>
       </form>
     </section>
 
@@ -78,8 +77,15 @@
       <span>Total productos: <strong id="total-items">0</strong></span>
       <span>Subtotal: <strong id="subtotal">0.00€</strong></span>
       <span>Envío: <strong id="envio">?€</strong></span>
-      <span>Comisión Stripe: <strong id="comision">?€</strong></span>
+      <span>Comisión: <strong id="comision">?€</strong></span>
       <span>Total a pagar: <strong id="total-pago">0.00€</strong></span>
+    </div>
+
+    <div class="checkout-submit">
+      <button type="submit" form="form-checkout" class="btn-añadir-carrito largo">Realizar pedido</button>
+    </div>
+    <div class="btn-añadir-carrito-texto">
+      it may take a few seconds to process your order, please be patient.
     </div>
   </main>
 

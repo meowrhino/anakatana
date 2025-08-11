@@ -64,6 +64,85 @@ function calcularSubtotales(carrito) {
   );
 }
 
+/* === CARGA DE TARIFAS DE ENVÍO (desde envios.json) === */
+let TARIFAS_ENVIO = window.TARIFAS_ENVIO || null;
+const LABELS_ZONA = {
+  espana: "España",
+  islas: "Islas Baleares y Canarias",
+  europa: "Europa",
+  eeuu: "Estados Unidos",
+  latam: "Latinoamérica",
+  japon: "Japón",
+  entrega_mano_bcn: "entrega en mano"
+};
+window.LABELS_ZONA = LABELS_ZONA;
+const cargarTarifasEnvio = (() => {
+  let promise = null;
+  return function (force = false) {
+    // Si ya tenemos tabla y no forzamos, devolvemos lo que hay
+    if (!force && TARIFAS_ENVIO) return Promise.resolve(TARIFAS_ENVIO);
+    // Si ya hay una petición en curso y no forzamos, reutilizarla
+    if (!force && promise) return promise;
+
+    const doFetch = () =>
+      fetch(`envios.json?v=${Date.now()}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          TARIFAS_ENVIO = data;
+          window.TARIFAS_ENVIO = data; // por si otras partes lo usan
+          return data;
+        })
+        .catch((err) => {
+          console.error("No se pudieron cargar las tarifas de envío:", err);
+          // Mantener lo que hubiera para no romper el flujo
+          TARIFAS_ENVIO = window.TARIFAS_ENVIO || {};
+          return TARIFAS_ENVIO;
+        });
+
+    // Si forzamos, no memorizamos la promesa
+    return force ? doFetch() : (promise = doFetch());
+  };
+})();
+
+window.cargarTarifasEnvio = cargarTarifasEnvio;
+
+// === Cálculo de envío centralizado (lee de window.TARIFAS_ENVIO) ===
+window.calcularEnvioCoste = function (peso, zona) {
+  if (!zona) return null;
+  if (zona === 'entrega_mano_bcn') return 0; // entrega en mano: 0 €
+
+  // Normaliza peso a kg si parece venir en gramos
+  var pesoKg = Number(peso) || 0;
+  if (pesoKg > 10) pesoKg = pesoKg / 1000; // si es >10 asumimos gramos
+
+  // Rangos: 0 (≤1kg), 1 (≤2.5kg), 2 (>2.5kg)
+  var rango = pesoKg <= 1 ? 0 : (pesoKg <= 2.5 ? 1 : 2);
+
+  var tablaZona = (window.TARIFAS_ENVIO && window.TARIFAS_ENVIO[zona]) || null;
+  if (!tablaZona) return null;
+
+  // Si la tabla es array: [pequeno, mediano, grande]
+  if (Array.isArray(tablaZona)) {
+    return (typeof tablaZona[rango] === 'number') ? tablaZona[rango] : null;
+  }
+
+  // Si la tabla es objeto: { pequeno|pequeño|small, mediano|medium, grande|large }
+  if (typeof tablaZona === 'object') {
+    var small  = tablaZona.pequeno ?? tablaZona['pequeño'] ?? tablaZona.small  ?? tablaZona.s;
+    var medium = tablaZona.mediano ?? tablaZona.medium   ?? tablaZona.m;
+    var large  = tablaZona.grande  ?? tablaZona.large    ?? tablaZona.l;
+    var arr = [small, medium, large];
+    return (typeof arr[rango] === 'number') ? arr[rango] : null;
+  }
+
+  return null;
+};
+
+// 3.2. Comisión (1,4%)
+function calcularComision(totalSinComision) {
+  return totalSinComision * 0.014;
+}
+
 // 3.3. Crea y muestra el overlay + modal
 
 /**
@@ -124,32 +203,54 @@ function abrirCarrito() {
   envioWrapper.innerHTML = `
     <label for="envio-zona">Estimar envío</label>
     <select id="envio-zona">
-      <option value=>elige zona</option>
-      <option value="espana">España</option>
-      <option value="islas">Islas</option>
-      <option value="europa">Europa</option>
-      <option value="eeuu">EEUU</option>
-      <option value="latam">LATAM</option>
-      <option value="japon">Japón</option>
+      <option value="">elige zona</option>
     </select>
     <p id="envio-estimado"></p>
   `;
-
-  // — aquí fijamos la zona que hubiera quedado la última vez —
-  if (zonaSeleccionada) {
-    envioWrapper.querySelector("#envio-zona").value = zonaSeleccionada;
-    envioWrapper
-      .querySelector("#envio-zona")
-      // Disparamos manualmente 'change' para recalcular total con la zona anterior
-      .dispatchEvent(new Event("change"));
-  }
-
   modal.appendChild(envioWrapper);
 
+  // Poblar zonas desde envios.json (vía cargarTarifasEnvio)
+  const selectZonaEl = envioWrapper.querySelector("#envio-zona");
+  cargarTarifasEnvio(true).then(() => {
+    // Asegurar estructura y entrega en mano (0€) por si no viniera
+    if (!TARIFAS_ENVIO) TARIFAS_ENVIO = {};
+    if (!Object.prototype.hasOwnProperty.call(TARIFAS_ENVIO, "entrega_mano_bcn")) {
+      TARIFAS_ENVIO.entrega_mano_bcn = { pequeno: 0, mediano: 0, grande: 0 };
+    }
+
+    // Limpiar y poblar opciones
+    selectZonaEl.innerHTML = `<option value="">elige zona</option>`;
+    const zonas = Object.keys(TARIFAS_ENVIO).sort((a, b) =>
+      a === "entrega_mano_bcn" ? -1 : b === "entrega_mano_bcn" ? 1 : a.localeCompare(b)
+    );
+
+    zonas.forEach((z) => {
+      const opt = document.createElement("option");
+      opt.value = z;
+      const nice = (LABELS_ZONA && LABELS_ZONA[z]) || z.replace(/_/g, " ");
+      opt.textContent = nice;
+      selectZonaEl.appendChild(opt);
+    });
+
+    // Restaurar selección previa si existe (y calcular ya)
+    if (zonaSeleccionada && selectZonaEl.querySelector(`option[value="${zonaSeleccionada}"]`)) {
+      selectZonaEl.value = zonaSeleccionada;
+      selectZonaEl.dispatchEvent(new Event('change'));
+    }
+  });
+
   // 5) texto de totales + botón pago
-  const resumen = document.createElement("p");
+  const resumen = document.createElement("div");
   resumen.className = "carrito-total";
-  resumen.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
+  resumen.innerHTML = `
+    <p>Productos: <strong id="res-subtotal">${subtotal.toFixed(2)}€</strong></p>
+    <p>Envío: <strong id="res-envio">—</strong></p>
+    <p>Comisión: <strong id="res-comision">—</strong></p>
+    <p>Total: <strong id="res-total">${subtotal.toFixed(2)}€</strong></p>
+  `;
+  const resEnvio = resumen.querySelector("#res-envio");
+  const resComision = resumen.querySelector("#res-comision");
+  const resTotal = resumen.querySelector("#res-total");
   const btnPagar = document.createElement("button");
   btnPagar.className = "carrito-pagar";
   btnPagar.textContent = "IR AL PAGO";
@@ -158,28 +259,27 @@ function abrirCarrito() {
   });
   modal.append(resumen, btnPagar);
 
-  // 6) listener de cambio de zona (¡antes de disparar el evento!)
+  // 6) listener de cambio de zona
   const selectZona = envioWrapper.querySelector("#envio-zona");
   selectZona.addEventListener("change", (e) => {
     zonaSeleccionada = e.target.value; // guardamos
-    // Guardar zona seleccionada para persistencia
     localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
-    const coste = calcularEnvioCoste(pesoTotal, zonaSeleccionada);
+
+    const envioRaw = (zonaSeleccionada === "entrega_mano_bcn") ? 0 : calcularEnvioCoste(pesoTotal, zonaSeleccionada);
+    const coste = Number.isFinite(envioRaw) ? envioRaw : 0;
     const textoEnvio = envioWrapper.querySelector("#envio-estimado");
-    if (coste !== null) {
-      textoEnvio.textContent = `Envío estimado: ${coste.toFixed(2)}€`;
-      resumen.textContent = `Total estimado: ${(subtotal + coste).toFixed(2)}€`;
-    } else {
-      textoEnvio.textContent = "";
-      resumen.textContent = `Total productos: ${subtotal.toFixed(2)}€`;
-    }
+
+    textoEnvio.textContent = zonaSeleccionada ? `Envío estimado: ${coste.toFixed(2)}€` : "";
+    resEnvio.textContent   = zonaSeleccionada ? `${coste.toFixed(2)}€` : "—";
+
+    const totalSinComision = subtotal + coste;
+    const comision = calcularComision(totalSinComision);
+    const totalConComision = totalSinComision + comision;
+
+    resComision.textContent = zonaSeleccionada ? `${comision.toFixed(2)}€` : "—";
+    resTotal.textContent    = zonaSeleccionada ? `${totalConComision.toFixed(2)}€` : `${subtotal.toFixed(2)}€`;
   });
 
-  // Ahora sí reponemos la zona anterior y forzamos el cálculo
-  if (zonaSeleccionada) {
-    selectZona.value = zonaSeleccionada;
-    selectZona.dispatchEvent(new Event("change"));
-  }
 
   // 7) montar en DOM
   overlay.appendChild(modal);

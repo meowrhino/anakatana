@@ -4,7 +4,10 @@ let productosHome = []; // almacena la lista original
 document.addEventListener("DOMContentLoaded", cargarProductos);
 
 async function cargarProductos() {
-  const respuesta = await fetch("./productos.json");
+  // añadimos un parámetro único para evitar caché del navegador
+  const respuesta = await fetch(`./productos.json?v=${Date.now()}`, {
+    cache: "no-store",
+  });
   productosHome = await respuesta.json();
 
   // Renderiza inicialmente A→Z
