@@ -142,5 +142,26 @@
     },
     "fecha": "2025-07-25T18:08:28.428Z",
     "sessionId": "cs_test_b10VqRRJVMoqaxGa4CHs7JoUeEoQsfIiZV6qyidQfyWCCpwvDjNnIz9X4d"
+  },
+  {
+    "id": "20250811181448",
+    "carrito": [
+      {
+        "nombre": "I LISTEN TO APHEX TWIN DURING SEX",
+        "talla": "30cm width x 65cm length (seen in model)"
+      }
+    ],
+    "precioProductos": "25.00",
+    "precioEnvio": "8.00",
+    "precioComision": "0.47",
+    "total": "33.47",
+    "direccion": {
+      "nombreCliente": "ana montejo",
+      "direccion": "Carrer Peracamps 9 1o 1a",
+      "ciudad": "Barcelona",
+      "pais": "España"
+    },
+    "fecha": "2025-08-11T16:14:48.479Z",
+    "sessionId": "cs_test_b1PKEYpGpscRvvVd5DSCwQLQ8Bk9V5UzBtvEQuAgppr9SzA9WM7cqrocqK"
   }
 ]
