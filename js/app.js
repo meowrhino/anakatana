@@ -87,7 +87,7 @@ const cargarTarifasEnvio = (() => {
     if (!force && promise) return promise;
 
     const doFetch = () =>
-      fetch(`envios.json?v=${Date.now()}`, { cache: "no-store" })
+      fetch(`data/envios.json?v=${Date.now()}`, { cache: "no-store" })
         .then((r) => r.json())
         .then((data) => {
           TARIFAS_ENVIO = data;

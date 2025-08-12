@@ -21,7 +21,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    const respuesta = await fetch("./productos.json");
+    const respuesta = await fetch("data/productos.json");
     const productos = await respuesta.json();
     producto = productos.find((p) => p.id === id);
 
