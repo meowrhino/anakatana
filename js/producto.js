@@ -45,23 +45,22 @@ window.addEventListener("DOMContentLoaded", async () => {
           const texto = `${t.descripcion}${
             t.id === producto.tallaModelo ? " (seen in model)" : ""
           }`;
-          return `<div class="dropdown-option" data-index="${i}" role="option">${texto}</div>`;
+          return `<div class="dropdown-option" data-index="${i}" data-id="${t.id}" data-desc="${t.descripcion}" role="option"><strong>talla ${t.id}</strong> <span class="desc">${t.descripcion}</span></div>`;
         })
         .join("");
 
       const extraOption =
         producto.tallas.length > 1
-          ? `<div class="dropdown-option" data-index="custom" role="option">custom (send mail)</div>`
+          ? `<div class="dropdown-option" data-index="custom" data-id="custom" role="option">custom (send mail)</div>`
           : "";
 
       tallas = `
   <div class="talla-wrapper">
     <div class="dropdown" role="listbox" tabindex="0" data-selected="${
       producto.tallas.findIndex((t) => t.id === producto.tallaModelo) || 0
-    }">
+    }" data-talla-id="${(producto.tallas.find((t)=>t.id===producto.tallaModelo)||producto.tallas[0])?.id}">
       <div class="dropdown-toggle">${
-        producto.tallas.find((t) => t.id === producto.tallaModelo)
-          ?.descripcion || producto.tallas[0]?.descripcion
+        (() => { const sel=producto.tallas.find((t)=>t.id===producto.tallaModelo)||producto.tallas[0]; return `<strong>talla ${sel?.id}</strong> <span class=\"desc\">${sel?.descripcion||""}</span>`; })()
       }</div>
       <div class="dropdown-menu">${opciones}${extraOption}</div>
     </div>
@@ -113,16 +112,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("btn-añadir-carrito")) {
-      const id = parseInt(
-        new URLSearchParams(window.location.search).get("id")
-      );
-      const nombre =
-        document.querySelector(".titulo")?.textContent || "producto";
-      const talla =
-        document.querySelector(".dropdown[data-selected] .dropdown-toggle")
-          ?.textContent || null;
+      const id = parseInt(new URLSearchParams(window.location.search).get("id"));
+      const dropdown = document.querySelector('.dropdown');
+      const tallaId = dropdown?.dataset.tallaId || null;
+      const talla = tallaId ? `talla ${tallaId}` : null;
 
-      agregarAlCarrito(
+      window.agregarAlCarrito(
         producto.id,
         producto.titulo,
         talla,
@@ -190,9 +185,10 @@ document.addEventListener("click", (e) => {
   if (option) {
     const container = option.closest(".dropdown");
     const toggle = container.querySelector(".dropdown-toggle");
-    toggle.textContent = option.textContent;
+    toggle.innerHTML = option.innerHTML;
     container.classList.remove("open");
     container.dataset.selected = option.dataset.index;
+    container.dataset.tallaId = option.dataset.id || '';
     return;
   }
 

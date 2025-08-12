@@ -10,6 +10,18 @@
   function initCheckout() {
     // 1. Obtener carrito de localStorage
 
+    // Código postal solo números (campo 'cp')
+    const cpInput = document.getElementById('cp');
+    if (cpInput) {
+      cpInput.addEventListener('input', (e) => {
+        const digits = e.target.value.replace(/\D+/g, '');
+        if (e.target.value !== digits) e.target.value = digits;
+      });
+      cpInput.setAttribute('inputmode', 'numeric');
+      cpInput.setAttribute('pattern', '\\d*');
+    }
+    
+
     const lista = document.getElementById("lista-carrito");
     lista.innerHTML = "";
     let subtotal = 0;
@@ -27,7 +39,7 @@
   <div class="checkout-item-info">
     <img src="${item.img}" alt="${item.nombre}" class="checkout-img">
     <div>
-      <p>${item.nombre}</p>
+      <a class="checkout-nombre" href="producto.html?id=${item.id}">${item.nombre}</a>
       <p>${item.talla ? "" + item.talla : ""}</p>
         <div class="checkout-item-actions">
     <button class="btn-ver">Ver</button>
@@ -79,8 +91,9 @@
         if (
           !form.elements["nombre"] ||
           !form.elements["direccion"] ||
-          !form.elements["ciudad"] ||
-          !form.elements["pais"]
+          !form.elements["cp"] ||
+          !form.elements["pais"] ||
+          !form.elements["email"]
         ) {
           alert(
             "Faltan campos obligatorios en el formulario. Por favor, revisa el HTML."
@@ -90,17 +103,19 @@
 
         // Recoger datos de dirección del formulario
         const addressData = {
+          email: form.elements["email"]?.value,
           nombreCliente: form.elements["nombre"].value,
           direccion: form.elements["direccion"].value,
-          ciudad: form.elements["ciudad"].value,
+          cp: form.elements["cp"].value,
           pais: form.elements["pais"].value,
         };
 
         if (
           !addressData.nombreCliente ||
           !addressData.direccion ||
-          !addressData.ciudad ||
-          !addressData.pais
+          !addressData.cp ||
+          !addressData.pais ||
+          !addressData.email
         ) {
           alert(
             "Por favor, rellena todos los campos de dirección antes de continuar."
@@ -149,6 +164,7 @@
                   return totalWithFee * FEE_RATE;
                 })(),
                 direccion: addressData,
+            email: addressData.email,
                 fecha: new Date().toISOString(),
               }),
             }
@@ -187,6 +203,7 @@
             precioComision: precioComision.toFixed(2),
             total: totalPago.toFixed(2),
             direccion: addressData,
+            email: addressData.email,
             fecha: new Date().toISOString(),
             sessionId: data.sessionId,
           };
@@ -332,3 +349,4 @@
     });
   });
 })();
+

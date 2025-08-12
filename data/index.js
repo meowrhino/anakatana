@@ -206,7 +206,7 @@ if (!process.env.GITHUB_TOKEN) {
 async function subirRegistroAGitHub(contenidoBase64, sha) {
   const owner = 'meowrhino'; // usuario/organización
   const repo = 'anakatana';  // nombre del repo
-  const ghPath = 'anakatana/data/registro.json'; // ruta dentro del repo
+  const ghPath = 'data/registro.json'; // ruta dentro del repo
 
   // Si no tenemos SHA, intenta obtenerlo (para update vs create)
   if (!sha) {

@@ -793,14 +793,14 @@ body[data-page-type="about"] {
 
   position: fixed;
   inset: 0; /* ocupa toda la ventana */
-  padding: 10vh 5vw; /* margen -> padding */
+  padding: 0 5vw; /* margen -> padding */
 
   box-sizing: border-box;
 
   overflow-y: auto;
 
   max-width: 1000px;
-  margin: 0 auto; /* centra horizontalmente */
+  margin: 10vh auto; /* centra horizontalmente */
   overflow-y: auto;
 }
 
@@ -960,4 +960,34 @@ body[data-page-type="about"] {
   display: flex;
   justify-content: center;
   align-items: center; /* centra horizontalmente */
+}
+
+/* Smaller description in size dropdown */
+.dropdown-option .desc,
+.dropdown-toggle .desc {
+  font-size: 0.85em;
+  opacity: 0.8;
+  margin-left: 0.25rem;
+}
+.dropdown-option strong,
+.dropdown-toggle strong {
+  font-weight: 600;
+}
+
+/* descripción pequeña en el selector de talla */
+.talla-desc {
+  font-size: 0.85em;
+  opacity: 0.75;
+  margin-left: 0.4em;
+}
+
+/* Popup "añadido al carrito" */
+#added-popup {
+  display: none;
+}
+#added-popup.is-open {
+  display: flex;
+}
+#added-popup .popup-msg {
+  margin: 0 0 12px 0;
 }

@@ -5,6 +5,49 @@ const carritoGuardado = localStorage.getItem("carrito");
 const carrito = carritoGuardado ? JSON.parse(carritoGuardado) : [];
 
 // === 2. FUNCIONES DE CARRITO ===
+
+// === POPUP: añadido al carrito ===
+// --- Popup "añadido al carrito" (reutiliza estilos del carrito) ---
+let addedPopup;
+
+function ensureAddedPopup() {
+  if (addedPopup) return addedPopup;
+
+  // Overlay centrado igual que el del carrito
+  const overlay = document.createElement("div");
+  overlay.id = "added-popup";
+  overlay.className = "popup-carrito"; // MISMO overlay que el carrito
+
+  // Panel con el mismo estilo que el carrito
+  const panel = document.createElement("div");
+  panel.className = "carrito-modal";
+  panel.innerHTML = `
+    <button class="carrito-cerrar" aria-label="Cerrar">✕</button>
+    <div class="carrito-contenido">
+      <p class="popup-msg">Se ha añadido al carrito</p>
+      <button class="carrito-pagar" type="button">Cerrar</button>
+    </div>
+  `;
+
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.classList.remove("is-open");
+  panel.querySelector(".carrito-cerrar").addEventListener("click", close);
+  panel.querySelector(".carrito-pagar").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  addedPopup = overlay;
+  return addedPopup;
+}
+
+function showAddToCartPopup() {
+  const el = ensureAddedPopup();
+  el.classList.add("is-open");
+}
+
 function agregarAlCarrito(
   id,
   nombre,
@@ -13,10 +56,21 @@ function agregarAlCarrito(
   precio = 0,
   img = ""
 ) {
+  // añade 1 unidad del producto
   carrito.push({ id, nombre, talla, cantidad: 1, peso, precio, img });
+
+  // popup informativo (mismo estilo que el modal del carrito)
+  try {
+    showAddToCartPopup();
+  } catch (_) {}
+
+  // persistencia + UI
   actualizarCarrito();
   actualizarContadorCarrito();
 }
+
+// expón la función globalmente para que otros scripts (producto.js) puedan llamarla
+window.agregarAlCarrito = agregarAlCarrito;
 
 function actualizarCarrito() {
   const listaCarrito = document.getElementById("carrito");
@@ -111,11 +165,10 @@ window.cargarTarifasEnvio = cargarTarifasEnvio;
 // === Cálculo de envío centralizado (lee de window.TARIFAS_ENVIO) ===
 window.calcularEnvioCoste = function (peso, zona) {
   if (!zona) return null;
-  if (zona === "entrega_mano_bcn") return 0; // entrega en mano: 0 €
+  if (zona === "entrega_mano_bcn") return 0;
 
-  // Normaliza peso a kg si parece venir en gramos
-  var pesoKg = Number(peso) || 0;
-  if (pesoKg > 10) pesoKg = pesoKg / 1000; // si es >10 asumimos gramos
+  // Todos los pesos del catálogo están en GRAMOS → convertir SIEMPRE a KG
+  var pesoKg = (Number(peso) || 0) / 1000;
 
   // Rangos: 0 (≤1kg), 1 (≤2.5kg), 2 (>2.5kg)
   var rango = pesoKg <= 1 ? 0 : pesoKg <= 2.5 ? 1 : 2;
@@ -206,8 +259,9 @@ function abrirCarrito() {
     div.innerHTML = `
       <img src="${item.img}" alt="${item.nombre}" class="carrito-img"/>
       <div class="carrito-info">
-        <p class="carrito-nombre">${item.nombre}</p>
-        <p class="carrito-detalles">${item.talla || ""}</p>
+        <a class="carrito-nombre" href="producto.html?id=${item.id}">${
+      item.nombre
+    }</a>        <p class="carrito-detalles">${item.talla || ""}</p>
         <p class="carrito-precio">${(item.precio * item.cantidad).toFixed(
           2
         )}€</p>
