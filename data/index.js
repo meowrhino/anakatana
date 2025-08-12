@@ -50,8 +50,6 @@ app.use(cors({
   methods: ['GET','POST','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
-// Responder preflights genéricamente
-app.options('*', cors());
 
 // Body parser JSON
 app.use(express.json());
