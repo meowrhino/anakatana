@@ -53,6 +53,7 @@ function actualizarContadorCarrito() {
 /// === 3. RENDER + LÓGICA DE POPUP CARRITO ===
 
 // 3.1. Calcula subtotal y peso total
+// 3.1. Calcula subtotal y peso total
 function calcularSubtotales(carrito) {
   return carrito.reduce(
     (acc, item) => {
@@ -63,6 +64,7 @@ function calcularSubtotales(carrito) {
     { subtotal: 0, pesoTotal: 0 }
   );
 }
+window.calcularSubtotales = calcularSubtotales; // ← expone la función
 
 /* === CARGA DE TARIFAS DE ENVÍO (desde envios.json) === */
 let TARIFAS_ENVIO = window.TARIFAS_ENVIO || null;
@@ -73,7 +75,7 @@ const LABELS_ZONA = {
   eeuu: "Estados Unidos",
   latam: "Latinoamérica",
   japon: "Japón",
-  entrega_mano_bcn: "entrega en mano"
+  entrega_mano_bcn: "entrega en mano",
 };
 window.LABELS_ZONA = LABELS_ZONA;
 const cargarTarifasEnvio = (() => {
@@ -109,33 +111,59 @@ window.cargarTarifasEnvio = cargarTarifasEnvio;
 // === Cálculo de envío centralizado (lee de window.TARIFAS_ENVIO) ===
 window.calcularEnvioCoste = function (peso, zona) {
   if (!zona) return null;
-  if (zona === 'entrega_mano_bcn') return 0; // entrega en mano: 0 €
+  if (zona === "entrega_mano_bcn") return 0; // entrega en mano: 0 €
 
   // Normaliza peso a kg si parece venir en gramos
   var pesoKg = Number(peso) || 0;
   if (pesoKg > 10) pesoKg = pesoKg / 1000; // si es >10 asumimos gramos
 
   // Rangos: 0 (≤1kg), 1 (≤2.5kg), 2 (>2.5kg)
-  var rango = pesoKg <= 1 ? 0 : (pesoKg <= 2.5 ? 1 : 2);
+  var rango = pesoKg <= 1 ? 0 : pesoKg <= 2.5 ? 1 : 2;
 
   var tablaZona = (window.TARIFAS_ENVIO && window.TARIFAS_ENVIO[zona]) || null;
   if (!tablaZona) return null;
 
   // Si la tabla es array: [pequeno, mediano, grande]
   if (Array.isArray(tablaZona)) {
-    return (typeof tablaZona[rango] === 'number') ? tablaZona[rango] : null;
+    return typeof tablaZona[rango] === "number" ? tablaZona[rango] : null;
   }
 
   // Si la tabla es objeto: { pequeno|pequeño|small, mediano|medium, grande|large }
-  if (typeof tablaZona === 'object') {
-    var small  = tablaZona.pequeno ?? tablaZona['pequeño'] ?? tablaZona.small  ?? tablaZona.s;
-    var medium = tablaZona.mediano ?? tablaZona.medium   ?? tablaZona.m;
-    var large  = tablaZona.grande  ?? tablaZona.large    ?? tablaZona.l;
+  if (typeof tablaZona === "object") {
+    var small =
+      tablaZona.pequeno ??
+      tablaZona["pequeño"] ??
+      tablaZona.small ??
+      tablaZona.s;
+    var medium = tablaZona.mediano ?? tablaZona.medium ?? tablaZona.m;
+    var large = tablaZona.grande ?? tablaZona.large ?? tablaZona.l;
     var arr = [small, medium, large];
-    return (typeof arr[rango] === 'number') ? arr[rango] : null;
+    return typeof arr[rango] === "number" ? arr[rango] : null;
   }
 
   return null;
+};
+
+// === Comisión centralizada + motor de totales unificado ===
+window.FEE_RATE = 0.014; // 1.4%
+
+// Recalcula totales a partir del carrito y la zona
+// Devuelve { subtotal, pesoTotal, envio, comision, total }
+window.recalcularTotales = function (carrito, zona) {
+  const subtotal = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
+  const pesoTotal = carrito.reduce((s, it) => s + it.peso * it.cantidad, 0);
+
+  const envioRaw =
+    zona === "entrega_mano_bcn"
+      ? 0
+      : window.calcularEnvioCoste(pesoTotal, zona);
+  const envio = Number.isFinite(envioRaw) ? envioRaw : 0;
+
+  const base = subtotal + envio;
+  const total = base / (1 - window.FEE_RATE);
+  const comision = total * window.FEE_RATE;
+
+  return { subtotal, pesoTotal, envio, comision, total };
 };
 
 // 3.2. Comisión (1,4%)
@@ -214,14 +242,20 @@ function abrirCarrito() {
   cargarTarifasEnvio(true).then(() => {
     // Asegurar estructura y entrega en mano (0€) por si no viniera
     if (!TARIFAS_ENVIO) TARIFAS_ENVIO = {};
-    if (!Object.prototype.hasOwnProperty.call(TARIFAS_ENVIO, "entrega_mano_bcn")) {
+    if (
+      !Object.prototype.hasOwnProperty.call(TARIFAS_ENVIO, "entrega_mano_bcn")
+    ) {
       TARIFAS_ENVIO.entrega_mano_bcn = { pequeno: 0, mediano: 0, grande: 0 };
     }
 
     // Limpiar y poblar opciones
     selectZonaEl.innerHTML = `<option value="">elige zona</option>`;
     const zonas = Object.keys(TARIFAS_ENVIO).sort((a, b) =>
-      a === "entrega_mano_bcn" ? -1 : b === "entrega_mano_bcn" ? 1 : a.localeCompare(b)
+      a === "entrega_mano_bcn"
+        ? -1
+        : b === "entrega_mano_bcn"
+        ? 1
+        : a.localeCompare(b)
     );
 
     zonas.forEach((z) => {
@@ -233,9 +267,12 @@ function abrirCarrito() {
     });
 
     // Restaurar selección previa si existe (y calcular ya)
-    if (zonaSeleccionada && selectZonaEl.querySelector(`option[value="${zonaSeleccionada}"]`)) {
+    if (
+      zonaSeleccionada &&
+      selectZonaEl.querySelector(`option[value="${zonaSeleccionada}"]`)
+    ) {
       selectZonaEl.value = zonaSeleccionada;
-      selectZonaEl.dispatchEvent(new Event('change'));
+      selectZonaEl.dispatchEvent(new Event("change"));
     }
   });
 
@@ -260,26 +297,28 @@ function abrirCarrito() {
   modal.append(resumen, btnPagar);
 
   // 6) listener de cambio de zona
-  const selectZona = envioWrapper.querySelector("#envio-zona");
-  selectZona.addEventListener("change", (e) => {
+  selectZonaEl.addEventListener("change", (e) => {
     zonaSeleccionada = e.target.value; // guardamos
     localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
 
-    const envioRaw = (zonaSeleccionada === "entrega_mano_bcn") ? 0 : calcularEnvioCoste(pesoTotal, zonaSeleccionada);
-    const coste = Number.isFinite(envioRaw) ? envioRaw : 0;
     const textoEnvio = envioWrapper.querySelector("#envio-estimado");
+    const { envio, comision, total } = window.recalcularTotales(
+      carrito,
+      zonaSeleccionada
+    );
 
-    textoEnvio.textContent = zonaSeleccionada ? `Envío estimado: ${coste.toFixed(2)}€` : "";
-    resEnvio.textContent   = zonaSeleccionada ? `${coste.toFixed(2)}€` : "—";
-
-    const totalSinComision = subtotal + coste;
-    const comision = calcularComision(totalSinComision);
-    const totalConComision = totalSinComision + comision;
-
-    resComision.textContent = zonaSeleccionada ? `${comision.toFixed(2)}€` : "—";
-    resTotal.textContent    = zonaSeleccionada ? `${totalConComision.toFixed(2)}€` : `${subtotal.toFixed(2)}€`;
+    if (zonaSeleccionada) {
+      textoEnvio.textContent = `Envío estimado: ${envio.toFixed(2)}€`;
+      resEnvio.textContent = `${envio.toFixed(2)}€`;
+      resComision.textContent = `${comision.toFixed(2)}€`;
+      resTotal.textContent = `${total.toFixed(2)}€`;
+    } else {
+      textoEnvio.textContent = "";
+      resEnvio.textContent = "—";
+      resComision.textContent = "—";
+      resTotal.textContent = `${subtotal.toFixed(2)}€`;
+    }
   });
-
 
   // 7) montar en DOM
   overlay.appendChild(modal);
@@ -296,24 +335,26 @@ const observer = new MutationObserver(() => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-
 function actualizarTotales() {
   const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
   const zona = document.getElementById("zonaDropdown")?.dataset?.selected || "";
 
-  const { subtotal, pesoTotal } = calcularSubtotales(carrito);
-  const envioCoste = calcularEnvioCoste(pesoTotal, zona) || 0;
-
-  const totalSinComision = subtotal + envioCoste;
-  const comision = totalSinComision * 0.014;
-  const totalConComision = totalSinComision + comision;
+  const { subtotal, envio, comision, total } = window.recalcularTotales(
+    carrito,
+    zona
+  );
 
   // Calcular número total de ítems (sumando cantidades)
   const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-  document.getElementById("total-items").textContent = totalItems;
-  document.getElementById("subtotal").textContent = subtotal.toFixed(2) + "€";
-  document.getElementById("envio").textContent = envioCoste.toFixed(2) + "€";
-  document.getElementById("total-pago").textContent = totalConComision.toFixed(2) + "€";
+  const subtotalEl = document.getElementById("subtotal");
+  const envioEl = document.getElementById("envio");
+  const totalPagoEl = document.getElementById("total-pago");
+  const itemsEl = document.getElementById("total-items");
+
+  if (itemsEl) itemsEl.textContent = totalItems;
+  if (subtotalEl) subtotalEl.textContent = subtotal.toFixed(2) + "€";
+  if (envioEl) envioEl.textContent = envio.toFixed(2) + "€";
+  if (totalPagoEl) totalPagoEl.textContent = total.toFixed(2) + "€";
 }
 
 // Exponerla globalmente
