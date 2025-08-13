@@ -21,5 +21,28 @@
     "email": "manuellatourf@gmail.com",
     "fecha": "2025-08-12T21:54:03.597Z",
     "sessionId": "cs_live_b1qBVjBFg8n4BxFSDAiM6D0mt37vFdbPlULLJIHXPUZmnGw14VHY9gFCmU"
+  },
+  {
+    "id": "20250813100636",
+    "carrito": [
+      {
+        "nombre": "gatito",
+        "talla": "talla 1"
+      }
+    ],
+    "precioProductos": "1.00",
+    "precioEnvio": "0.00",
+    "precioComision": "0.01",
+    "total": "1.01",
+    "direccion": {
+      "email": "manuellatourf@gmail.com",
+      "nombreCliente": "Manuel Latour Fernandez",
+      "direccion": "Carrer Peracamps 9 1o 1a",
+      "cp": "08001",
+      "pais": "España"
+    },
+    "email": "manuellatourf@gmail.com",
+    "fecha": "2025-08-13T08:06:36.057Z",
+    "sessionId": "cs_live_b1u5DcE0kVzh4GXu6VF8FcBejLq5VvczrYxIVaBkwODx9N2j6DWZX5IsUy"
   }
 ]
