@@ -106,6 +106,47 @@ window.addEventListener("DOMContentLoaded", async () => {
         </div>
       </div>
     `;
+  // --- Galería de imágenes (usa producto.galeria o la principal) ---
+  (function initGaleria(){
+    const cont = document.querySelector('.producto-img-container');
+    const mainImg = cont?.querySelector('.producto-img');
+    if (!cont || !mainImg) return;
+
+    const imagenes = (producto.galeria && producto.galeria.length)
+      ? producto.galeria
+      : [producto.img];
+
+    let idx = 0;
+    const setMain = (i) => {
+      idx = ((i % imagenes.length) + imagenes.length) % imagenes.length;
+      mainImg.src = imagenes[idx];
+      cont.querySelectorAll('.producto-thumbs .thumb').forEach((b, j) => {
+        b.classList.toggle('active', j === idx);
+      });
+    };
+
+    const strip = document.createElement('div');
+    strip.className = 'producto-thumbs';
+    imagenes.forEach((src, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'thumb' + (i === 0 ? ' active' : '');
+      const im = document.createElement('img');
+      im.src = src; im.alt = `miniatura ${i+1}`;
+      btn.appendChild(im);
+      btn.addEventListener('click', () => setMain(i));
+      strip.appendChild(btn);
+    });
+    cont.appendChild(strip);
+
+    const next = document.createElement('button');
+    next.className = 'thumbs-next';
+    next.textContent = '›';
+    next.addEventListener('click', () => setMain(idx + 1));
+    cont.appendChild(next);
+
+    setMain(0);
+  })();
+
   } catch (e) {
     contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
   }

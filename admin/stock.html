@@ -1,0 +1,306 @@
+<!doctype html><html lang="es">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin · Stock</title>
+<link rel="stylesheet" href="../css/styles.css" />
+<style>
+
+  body { background:#000; color:#fff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  .wrap { max-width: 1100px; margin: 24px auto; padding: 16px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  input, button, a.btn { background:#111; color:#fff; border:1px solid #fff; border-radius:12px; padding:10px 14px; text-decoration:none; }
+  .muted { opacity:.7; }
+
+  /* login overlay */
+  .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.95); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .auth-panel { width: min(520px, 92vw); background:#000; border:1px solid #fff; border-radius:16px; padding:28px; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+  .auth-panel h1 { margin:0 0 14px 0; font-size: 36px; }
+  .auth-panel .err { color:#ff7a7a; min-height: 1.2em; }
+  .hidden { display:none !important; }
+
+table { width:100%; border-collapse: collapse; }
+th, td { border-bottom:1px solid #333; padding:8px; vertical-align: top; }
+.btn { cursor:pointer; }
+.actions { display:flex; gap:8px; }
+
+/* photo modal */
+.photo-modal { position: fixed; inset:0; background: rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; z-index:9998; }
+.photo-card { width:min(780px, 94vw); background:#000; border:1px solid #fff; border-radius:16px; padding:18px; }
+.grid { display:grid; grid-template-columns: repeat(auto-fill, 120px); gap:10px; }
+.ph { border:1px solid #fff; border-radius:8px; padding:6px; text-align:center; }
+.ph img { width:100%; height:86px; object-fit:cover; border-radius:6px; }
+.ph .ph-actions { display:flex; gap:6px; justify-content:center; margin-top:6px; }
+</style>
+<section class="wrap">
+  <h1>Gestor de stock</h1>
+  <div class="row">
+    <input id="token" placeholder="Admin token" />
+    <button class="btn" id="btnCargar">Cargar</button>
+    <button class="btn" id="btnGuardarStock">Guardar stock</button>
+    <span class="muted" id="status">—</span>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="filtro" placeholder="Buscar por id/título…" style="flex:1" />
+  </div>
+  <table id="tabla" style="margin-top:12px"></table>
+</section>
+
+<!-- Auth overlay -->
+<div id="auth" class="auth-overlay">
+  <div class="auth-panel">
+    <h1>¿eres Ana Katana?</h1>
+    <div class="muted">Introduce la clave para entrar</div>
+    <div class="row" style="margin-top:10px">
+      <input id="authToken" placeholder="clave" type="password" style="flex:1" />
+      <button class="btn" id="authGo">Entrar</button>
+    </div>
+    <div id="authErr" class="err" style="margin-top:8px"></div>
+    <div class="muted" id="authHint" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- Photo editor modal -->
+<div id="photoModal" class="photo-modal hidden">
+  <div class="photo-card">
+    <h2 style="margin:0 0 8px 0">Editar fotos</h2>
+    <div class="grid" id="phGrid"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="newPhotoUrl" placeholder="Pegar URL de imagen…" style="flex:1" />
+      <button class="btn" id="addPhoto">Añadir</button>
+    </div>
+    <div class="row" style="margin-top:10px; justify-content:flex-end">
+      <button class="btn" id="phCancel">Cancelar</button>
+      <button class="btn" id="phSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://anakatana-backend.onrender.com';
+let productos = [];
+let dirtyStock = {};
+let token = '';
+
+const tokenInp = document.getElementById('token');
+tokenInp.value = localStorage.getItem('ADMIN_TOKEN') || '';
+tokenInp.addEventListener('input', e => localStorage.setItem('ADMIN_TOKEN', e.target.value));
+
+async function verifyToken(t) {
+  try {
+    const r = await fetch(`${API}/admin/historial?limit=1`, { headers: { 'Authorization': 'Bearer ' + t } });
+    if (r.status === 404) document.getElementById('authHint').textContent = 'Tu backend no tiene las rutas /admin desplegadas (404)';
+    return r.ok;
+  } catch(e) { return false; }
+}
+async function ensureAuth() {
+  token = localStorage.getItem('ADMIN_TOKEN') || tokenInp.value.trim();
+  if (!token || !(await verifyToken(token))) {
+    document.getElementById('auth').classList.remove('hidden');
+    return false;
+  }
+  document.getElementById('auth').classList.add('hidden');
+  return true;
+}
+document.getElementById('authGo').onclick = async () => {
+  const t = document.getElementById('authToken').value.trim();
+  const ok = await verifyToken(t);
+  if (ok) {
+    token = t;
+    localStorage.setItem('ADMIN_TOKEN', t);
+    tokenInp.value = t;
+    document.getElementById('auth').classList.add('hidden');
+  } else {
+    document.getElementById('authErr').textContent = 'Clave incorrecta o backend sin rutas /admin.';
+  }
+};
+
+function rowHTML(p){
+  return `
+    <tr>
+      <td>${p.id}</td>
+      <td contenteditable="true" data-k="titulo" data-id="${p.id}">${p.titulo||''}</td>
+      <td contenteditable="true" data-k="precio" data-id="${p.id}">${p.precio}</td>
+      <td contenteditable="true" data-k="peso" data-id="${p.id}">${p.peso||0}</td>
+      <td contenteditable="true" data-k="tallaModelo" data-id="${p.id}">${p.tallaModelo??''}</td>
+      <td><input type="number" class="st" data-id="${p.id}" min="0" value="${p.stock||0}"/></td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-fotos" data-id="${p.id}">Editar fotos</button>
+          <button class="btn btn-editar" data-id="${p.id}">Editar JSON</button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function renderTabla(list) {
+  const el = document.getElementById('tabla');
+  el.innerHTML = `
+    <thead><tr>
+      <th>ID</th><th>Título</th><th>Precio</th><th>Peso (g)</th><th>Talla modelo</th><th>Stock</th><th>Fotos</th>
+    </tr></thead>
+    <tbody>
+      ${list.map(rowHTML).join('')}
+    </tbody>`;
+
+  el.querySelectorAll('input.st').forEach(inp => {
+    inp.addEventListener('input', e => { dirtyStock[e.target.dataset.id] = Number(e.target.value); });
+  });
+  el.querySelectorAll('[contenteditable="true"]').forEach(cell => {
+    cell.addEventListener('blur', e => {
+      const id = Number(e.target.dataset.id);
+      const k = e.target.dataset.k;
+      const p = productos.find(x => x.id === id);
+      if (!p) return;
+      let v = e.target.textContent.trim();
+      if (k === 'precio' || k === 'peso') v = Number(v);
+      p[k] = v;
+      document.getElementById('status').textContent = 'Cambios locales sin guardar';
+    });
+  });
+  el.querySelectorAll('.btn-fotos').forEach(b => {
+    b.addEventListener('click', () => openPhotoEditor(Number(b.dataset.id)));
+  });
+  el.querySelectorAll('.btn-editar').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = Number(b.dataset.id);
+      const p = productos.find(x => x.id === id);
+      const nuevo = prompt('Editar JSON del producto', JSON.stringify(p, null, 2));
+      if (!nuevo) return;
+      try {
+        const parsed = JSON.parse(nuevo);
+        const idx = productos.findIndex(x => x.id === id);
+        productos[idx] = parsed;
+        document.getElementById('status').textContent = 'Cambios locales sin guardar';
+      } catch (e) {
+        alert('JSON inválido: ' + e.message);
+      }
+    });
+  });
+}
+
+document.getElementById('btnCargar').onclick = async () => {
+  const ok = await ensureAuth();
+  if (!ok) return;
+  const r = await fetch(`${API}/productos`, { cache: 'no-store' });
+  productos = await r.json();
+  dirtyStock = {};
+  renderTabla(productos);
+  document.getElementById('status').textContent = 'Productos cargados';
+};
+
+document.getElementById('btnGuardarStock').onclick = async () => {
+  const ok = await ensureAuth(); if (!ok) return;
+  const updates = Object.entries(dirtyStock).map(([id,stock]) => ({ id:Number(id), stock:Number(stock) }));
+  if (!updates.length) { alert('No hay cambios de stock'); return; }
+  const r = await fetch(`${API}/admin/stock-bulk`, {
+    method:'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + (token||tokenInp.value.trim()) },
+    body: JSON.stringify({ updates })
+  });
+  const data = await r.json();
+  if (!r.ok) return alert('Error: ' + (data.error||r.status));
+  alert('Actualizados: ' + data.updated);
+  dirtyStock = {};
+  document.getElementById('status').textContent = 'Stock guardado';
+};
+
+// === Photo editor ===
+let currentPhotoId = null;
+function openPhotoEditor(id){
+  currentPhotoId = id;
+  const p = productos.find(x => x.id === id);
+  const imgs = [p.img, ...(Array.isArray(p.galeria)? p.galeria : [])].filter(Boolean);
+  const grid = document.getElementById('phGrid');
+  grid.innerHTML = imgs.map((src,i)=>`
+    <div class="ph" data-i="${i}">
+      <img src="${src}" alt="foto ${i+1}"/>
+      <div class="ph-actions">
+        <button class="btn ph-up" data-i="${i}">↑</button>
+        <button class="btn ph-down" data-i="${i}">↓</button>
+        <button class="btn ph-del" data-i="${i}">Eliminar</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('photoModal').classList.remove('hidden');
+
+  grid.querySelectorAll('.ph-up').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), -1));
+  grid.querySelectorAll('.ph-down').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), 1));
+  grid.querySelectorAll('.ph-del').forEach(bt=>bt.onclick = ()=>removePhoto(Number(bt.dataset.i)));
+}
+function refreshGrid(){
+  openPhotoEditor(currentPhotoId);
+}
+function photosArray(){
+  const grid = document.getElementById('phGrid');
+  return Array.from(grid.querySelectorAll('img')).map(img=>img.src);
+}
+function setPhotosToProduct(){
+  const p = productos.find(x => x.id === currentPhotoId);
+  const arr = photosArray();
+  if (!p) return;
+  p.img = arr[0] || p.img;
+  p.galeria = arr.slice(1);
+  document.getElementById('status').textContent = 'Cambios locales sin guardar';
+}
+function movePhoto(i, dir){
+  const arr = photosArray();
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  const grid = document.getElementById('phGrid');
+  grid.innerHTML = arr.map((src,k)=>`
+    <div class="ph" data-i="${k}">
+      <img src="${src}" alt="foto ${k+1}"/>
+      <div class="ph-actions">
+        <button class="btn ph-up" data-i="${k}">↑</button>
+        <button class="btn ph-down" data-i="${k}">↓</button>
+        <button class="btn ph-del" data-i="${k}">Eliminar</button>
+      </div>
+    </div>`).join('');
+  grid.querySelectorAll('.ph-up').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), -1));
+  grid.querySelectorAll('.ph-down').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), 1));
+  grid.querySelectorAll('.ph-del').forEach(bt=>bt.onclick = ()=>removePhoto(Number(bt.dataset.i)));
+}
+function removePhoto(i){
+  const arr = photosArray();
+  arr.splice(i,1);
+  const grid = document.getElementById('phGrid');
+  grid.innerHTML = arr.map((src,k)=>`
+    <div class="ph" data-i="${k}">
+      <img src="${src}" alt="foto ${k+1}"/>
+      <div class="ph-actions">
+        <button class="btn ph-up" data-i="${k}">↑</button>
+        <button class="btn ph-down" data-i="${k}">↓</button>
+        <button class="btn ph-del" data-i="${k}">Eliminar</button>
+      </div>
+    </div>`).join('');
+  grid.querySelectorAll('.ph-up').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), -1));
+  grid.querySelectorAll('.ph-down').forEach(bt=>bt.onclick = ()=>movePhoto(Number(bt.dataset.i), 1));
+  grid.querySelectorAll('.ph-del').forEach(bt=>bt.onclick = ()=>removePhoto(Number(bt.dataset.i)));
+}
+document.getElementById('addPhoto').onclick = () => {
+  const url = (document.getElementById('newPhotoUrl').value || '').trim();
+  if (!url) return;
+  const grid = document.getElementById('phGrid');
+  const node = document.createElement('div');
+  node.className = 'ph';
+  node.innerHTML = `<img src="${url}"/><div class="ph-actions">
+    <button class="btn ph-up">↑</button>
+    <button class="btn ph-down">↓</button>
+    <button class="btn ph-del">Eliminar</button></div>`;
+  grid.appendChild(node);
+  document.getElementById('newPhotoUrl').value = '';
+  refreshGrid();
+};
+document.getElementById('phCancel').onclick = () => {
+  document.getElementById('photoModal').classList.add('hidden');
+  currentPhotoId = null;
+};
+document.getElementById('phSave').onclick = () => {
+  setPhotosToProduct();
+  document.getElementById('photoModal').classList.add('hidden');
+  currentPhotoId = null;
+};
+
+document.addEventListener('DOMContentLoaded', ensureAuth);
+</script>
+</html>

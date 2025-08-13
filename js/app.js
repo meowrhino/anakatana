@@ -170,6 +170,8 @@ window.calcularEnvioCoste = function (peso, zona) {
   // Todos los pesos del catálogo están en GRAMOS → convertir SIEMPRE a KG
   var pesoKg = (Number(peso) || 0) / 1000;
 
+  
+
   // Rangos: 0 (≤1kg), 1 (≤2.5kg), 2 (>2.5kg)
   var rango = pesoKg <= 1 ? 0 : pesoKg <= 2.5 ? 1 : 2;
 

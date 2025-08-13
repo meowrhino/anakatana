@@ -19,37 +19,49 @@
 // ───────────────────────────────────────────────────────────────────────────────
 // 1) IMPORTS Y SETUP DE ENTORNO
 // ───────────────────────────────────────────────────────────────────────────────
-const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
 // URL del frontend para redirecciones de Stripe (puede venir por env var)
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://meowrhino.github.io/anakatana';
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || "https://meowrhino.github.io/anakatana";
 
 // ───────────────────────────────────────────────────────────────────────────────
 // 2) INICIALIZACIÓN DE EXPRESS + CORS + PARSERS
 // ───────────────────────────────────────────────────────────────────────────────
 const app = express();
 
+/** === Admin auth (token simple) === */
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+function adminAuth(req, res, next) {
+  const h = req.headers["authorization"] || "";
+  const token = h.startsWith("Bearer ") ? h.slice(7) : "";
+  if (ADMIN_TOKEN && token === ADMIN_TOKEN) return next();
+  return res.status(401).json({ error: "unauthorized" });
+}
+
 /**
  * CORS: permitimos orígenes de desarrollo y el dominio público de producción.
  *  - Si cambias dónde sirves el front, añade su URL en ALLOWED_ORIGINS.
  */
 const ALLOWED_ORIGINS = [
-  'http://localhost:5500',
-  'http://127.0.0.1:5500',
-  'https://meowrhino.github.io'
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://meowrhino.github.io",
 ];
-app.use(cors({
-  origin(origin, cb) {
-    // Permite peticiones sin origin (curl, healthchecks) o listadas
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    return cb(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET','POST','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
-}));
+app.use(
+  cors({
+    origin(origin, cb) {
+      // Permite peticiones sin origin (curl, healthchecks) o listadas
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Body parser JSON
 app.use(express.json());
@@ -57,20 +69,24 @@ app.use(express.json());
 // ───────────────────────────────────────────────────────────────────────────────
 // 3) HELPERS DE VALIDACIÓN Y UTILIDADES
 // ───────────────────────────────────────────────────────────────────────────────
-const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
+const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
 const toCents = (eur) => Math.round(Number(eur) * 100);
 
 /** Valida carrito para /pedido (stock): [{ id, cantidad }] */
 function validateCarritoStock(carrito) {
   const errors = [];
   if (!Array.isArray(carrito) || carrito.length === 0) {
-    return { ok: false, errors: ['carrito debe ser un array con al menos 1 ítem'] };
+    return {
+      ok: false,
+      errors: ["carrito debe ser un array con al menos 1 ítem"],
+    };
   }
   carrito.forEach((it, idx) => {
-    if (!('id' in it)) errors.push(`item[${idx}].id requerido`);
-    if (!('cantidad' in it)) errors.push(`item[${idx}].cantidad requerida`);
+    if (!("id" in it)) errors.push(`item[${idx}].id requerido`);
+    if (!("cantidad" in it)) errors.push(`item[${idx}].cantidad requerida`);
     const qty = Number(it.cantidad);
-    if (!Number.isInteger(qty) || qty <= 0) errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
+    if (!Number.isInteger(qty) || qty <= 0)
+      errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
   });
   return { ok: errors.length === 0, errors };
 }
@@ -79,14 +95,20 @@ function validateCarritoStock(carrito) {
 function validateCarritoCheckout(carrito) {
   const errors = [];
   if (!Array.isArray(carrito) || carrito.length === 0) {
-    return { ok: false, errors: ['carrito debe ser un array con al menos 1 ítem'] };
+    return {
+      ok: false,
+      errors: ["carrito debe ser un array con al menos 1 ítem"],
+    };
   }
   carrito.forEach((it, idx) => {
-    if (!isNonEmptyString(it.nombre)) errors.push(`item[${idx}].nombre string requerido`);
+    if (!isNonEmptyString(it.nombre))
+      errors.push(`item[${idx}].nombre string requerido`);
     const precioNum = Number(it.precio);
-    if (!Number.isFinite(precioNum) || precioNum < 0) errors.push(`item[${idx}].precio debe ser número ≥ 0`);
+    if (!Number.isFinite(precioNum) || precioNum < 0)
+      errors.push(`item[${idx}].precio debe ser número ≥ 0`);
     const qty = Number(it.cantidad);
-    if (!Number.isInteger(qty) || qty <= 0) errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
+    if (!Number.isInteger(qty) || qty <= 0)
+      errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
   });
   return { ok: errors.length === 0, errors };
 }
@@ -101,12 +123,13 @@ function coerceNonNegNumber(name, v) {
 }
 
 // Rutas/Paths de datos en disco (JSON “persistente”)
-const dbPath = path.join(__dirname, 'productos.json');
-const registroPath = path.join(__dirname, 'registro.json');
+const dbPath = path.join(__dirname, "productos.json");
+const registroPath = path.join(__dirname, "registro.json");
 
 // Helpers para leer/escribir los JSON (siempre como texto UTF-8)
-const leerProductos = () => JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-const guardarProductos = (productos) => fs.writeFileSync(dbPath, JSON.stringify(productos, null, 2), 'utf-8');
+const leerProductos = () => JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+const guardarProductos = (productos) =>
+  fs.writeFileSync(dbPath, JSON.stringify(productos, null, 2), "utf-8");
 
 // ───────────────────────────────────────────────────────────────────────────────
 // 4) RUTAS DE CATÁLOGO Y STOCK
@@ -114,7 +137,7 @@ const guardarProductos = (productos) => fs.writeFileSync(dbPath, JSON.stringify(
 /**
  * GET /productos — devuelve el catálogo completo desde productos.json
  */
-app.get('/productos', (_req, res) => {
+app.get("/productos", (_req, res) => {
   const productos = leerProductos();
   res.json(productos);
 });
@@ -123,38 +146,51 @@ app.get('/productos', (_req, res) => {
  * POST /pedido — descuenta stock del JSON si hay unidades suficientes.
  * Body esperado: { carrito: [{ id, cantidad }, ...] }
  */
-app.post('/pedido', (req, res) => {
+app.post("/pedido", (req, res) => {
   const { carrito } = req.body;
   const check = validateCarritoStock(carrito);
   if (!check.ok) {
-    return res.status(400).json({ error: 'Payload inválido', detalle: check.errors });
+    return res
+      .status(400)
+      .json({ error: "Payload inválido", detalle: check.errors });
   }
 
   const productos = leerProductos();
   const sinStock = [];
 
-  carrito.forEach(item => {
+  carrito.forEach((item) => {
     const qty = Number(item.cantidad);
-    const producto = productos.find(p => p.id === item.id);
+    const producto = productos.find((p) => p.id === item.id);
     if (producto) {
       if (Number.isFinite(producto.stock) && producto.stock >= qty) {
         producto.stock -= qty;
       } else {
-        sinStock.push({ id: producto.id, disponible: Math.max(0, Number(producto.stock) || 0) });
+        sinStock.push({
+          id: producto.id,
+          disponible: Math.max(0, Number(producto.stock) || 0),
+        });
       }
     }
   });
 
   if (sinStock.length > 0) {
-    return res.status(400).json({ error: 'Algunos productos no tienen suficiente stock', sinStock });
+    return res
+      .status(400)
+      .json({
+        error: "Algunos productos no tienen suficiente stock",
+        sinStock,
+      });
   }
 
   try {
     guardarProductos(productos);
-    return res.json({ success: true, mensaje: 'Pedido registrado y stock actualizado' });
+    return res.json({
+      success: true,
+      mensaje: "Pedido registrado y stock actualizado",
+    });
   } catch (e) {
-    console.error('Error guardando productos:', e);
-    return res.status(500).json({ error: 'Error guardando stock' });
+    console.error("Error guardando productos:", e);
+    return res.status(500).json({ error: "Error guardando stock" });
   }
 });
 
@@ -162,24 +198,28 @@ app.post('/pedido', (req, res) => {
  * POST /editar-stock — actualiza el stock de un producto concreto.
  * Body esperado: { id, nuevoStock }
  */
-app.post('/editar-stock', (req, res) => {
+app.post("/editar-stock", (req, res) => {
   const { id, nuevoStock } = req.body;
   const stockNum = Number(nuevoStock);
   if (!Number.isInteger(stockNum) || stockNum < 0) {
-    return res.status(400).json({ error: 'nuevoStock debe ser entero ≥ 0' });
+    return res.status(400).json({ error: "nuevoStock debe ser entero ≥ 0" });
   }
 
   const productos = leerProductos();
-  const producto = productos.find(p => p.id === id);
-  if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
+  const producto = productos.find((p) => p.id === id);
+  if (!producto)
+    return res.status(404).json({ error: "Producto no encontrado" });
 
   producto.stock = stockNum;
   try {
     guardarProductos(productos);
-    return res.json({ success: true, mensaje: 'Stock actualizado correctamente' });
+    return res.json({
+      success: true,
+      mensaje: "Stock actualizado correctamente",
+    });
   } catch (e) {
-    console.error('Error guardando productos:', e);
-    return res.status(500).json({ error: 'Error guardando stock' });
+    console.error("Error guardando productos:", e);
+    return res.status(500).json({ error: "Error guardando stock" });
   }
 });
 
@@ -187,16 +227,18 @@ app.post('/editar-stock', (req, res) => {
 // 5) INTEGRACIONES: STRIPE + GITHUB (para registro de compras)
 // ───────────────────────────────────────────────────────────────────────────────
 // Stripe: clave desde variables de entorno en Render
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('⚠️ STRIPE_SECRET_KEY no está definida. /crear-sesion fallará.');
+  console.warn("⚠️ STRIPE_SECRET_KEY no está definida. /crear-sesion fallará.");
 }
 
 // GitHub: para subir el registro.json al repositorio
-const { Octokit } = require('@octokit/rest');
+const { Octokit } = require("@octokit/rest");
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 if (!process.env.GITHUB_TOKEN) {
-  console.warn('⚠️ GITHUB_TOKEN no está definido. Subida a GitHub puede fallar.');
+  console.warn(
+    "⚠️ GITHUB_TOKEN no está definido. Subida a GitHub puede fallar."
+  );
 }
 
 /**
@@ -204,14 +246,18 @@ if (!process.env.GITHUB_TOKEN) {
  *  - Si cambias la ubicación en tu repo, actualiza `ghPath`.
  */
 async function subirRegistroAGitHub(contenidoBase64, sha) {
-  const owner = 'meowrhino'; // usuario/organización
-  const repo = 'anakatana';  // nombre del repo
-  const ghPath = 'data/registro.json'; // ruta dentro del repo
+  const owner = "meowrhino"; // usuario/organización
+  const repo = "anakatana"; // nombre del repo
+  const ghPath = "data/registro.json"; // ruta dentro del repo
 
   // Si no tenemos SHA, intenta obtenerlo (para update vs create)
   if (!sha) {
     try {
-      const { data } = await octokit.repos.getContent({ owner, repo, path: ghPath });
+      const { data } = await octokit.repos.getContent({
+        owner,
+        repo,
+        path: ghPath,
+      });
       sha = data.sha;
     } catch (e) {
       if (e.status !== 404) throw e; // 404 = archivo aún no existe
@@ -225,7 +271,7 @@ async function subirRegistroAGitHub(contenidoBase64, sha) {
     path: ghPath,
     message: `chore: actualización registro.json (${new Date().toISOString()})`,
     content: contenidoBase64,
-    sha
+    sha,
   });
 }
 
@@ -236,27 +282,31 @@ async function subirRegistroAGitHub(contenidoBase64, sha) {
  * POST /crear-sesion — crea una sesión de Stripe Checkout con los items del carrito.
  * Body esperado: { carrito: [{ nombre, precio, cantidad }], envio: number, comision?: number }
  */
-app.post('/crear-sesion', async (req, res) => {
+app.post("/crear-sesion", async (req, res) => {
   const { carrito, envio, comision } = req.body;
 
   // Valida carrito
   const check = validateCarritoCheckout(carrito);
   if (!check.ok) {
-    return res.status(400).json({ error: 'Payload inválido', detalle: check.errors });
+    return res
+      .status(400)
+      .json({ error: "Payload inválido", detalle: check.errors });
   }
 
   // Valida envio/comision
-  const envioChk = coerceNonNegNumber('envio', envio);
+  const envioChk = coerceNonNegNumber("envio", envio);
   if (!envioChk.ok) return res.status(400).json({ error: envioChk.error });
-  const comisionChk = (comision === undefined || comision === null)
-    ? { ok: true, value: 0 }
-    : coerceNonNegNumber('comision', comision);
-  if (!comisionChk.ok) return res.status(400).json({ error: comisionChk.error });
+  const comisionChk =
+    comision === undefined || comision === null
+      ? { ok: true, value: 0 }
+      : coerceNonNegNumber("comision", comision);
+  if (!comisionChk.ok)
+    return res.status(400).json({ error: comisionChk.error });
 
   // Construye items Stripe a partir del carrito
-  const itemsStripe = carrito.map(item => ({
+  const itemsStripe = carrito.map((item) => ({
     price_data: {
-      currency: 'eur',
+      currency: "eur",
       product_data: { name: String(item.nombre).trim() },
       unit_amount: Math.max(0, toCents(item.precio)),
     },
@@ -266,8 +316,8 @@ app.post('/crear-sesion', async (req, res) => {
   // Envío como ítem adicional
   itemsStripe.push({
     price_data: {
-      currency: 'eur',
-      product_data: { name: 'Envío' },
+      currency: "eur",
+      product_data: { name: "Envío" },
       unit_amount: Math.max(0, toCents(envioChk.value)),
     },
     quantity: 1,
@@ -277,8 +327,8 @@ app.post('/crear-sesion', async (req, res) => {
   if (comisionChk.value > 0) {
     itemsStripe.push({
       price_data: {
-        currency: 'eur',
-        product_data: { name: 'Comisión Stripe' },
+        currency: "eur",
+        product_data: { name: "Comisión Stripe" },
         unit_amount: Math.max(0, toCents(comisionChk.value)),
       },
       quantity: 1,
@@ -287,9 +337,9 @@ app.post('/crear-sesion', async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: itemsStripe,
-      mode: 'payment',
+      mode: "payment",
       success_url: `${FRONTEND_URL}/gracias.html`,
       cancel_url: `${FRONTEND_URL}/sorry.html`,
     });
@@ -303,18 +353,18 @@ app.post('/crear-sesion', async (req, res) => {
 /**
  * POST /guardar-carrito — guarda el pedido en registro.json y sube el archivo a GitHub.
  */
-app.post('/guardar-carrito', async (req, res) => {
+app.post("/guardar-carrito", async (req, res) => {
   const nuevoRegistro = req.body;
-  console.log('📝 /guardar-carrito recibe:', nuevoRegistro);
+  console.log("📝 /guardar-carrito recibe:", nuevoRegistro);
   let registros = [];
 
   // 1) Leer registros previos si existe el archivo
   if (fs.existsSync(registroPath)) {
     try {
-      const data = fs.readFileSync(registroPath, 'utf-8');
+      const data = fs.readFileSync(registroPath, "utf-8");
       registros = data ? JSON.parse(data) : [];
     } catch (err) {
-      console.warn('⚠️ No se pudo parsear registro.json, se reinicia array');
+      console.warn("⚠️ No se pudo parsear registro.json, se reinicia array");
       registros = [];
     }
   }
@@ -322,36 +372,59 @@ app.post('/guardar-carrito', async (req, res) => {
   // 2) Agregar el nuevo registro
   registros.push(nuevoRegistro);
 
+  // === MVP: restar stock según carrito ===
+  try {
+    const productos = leerProductos();
+    if (Array.isArray(nuevoRegistro?.carrito)) {
+      nuevoRegistro.carrito.forEach((it) => {
+        const id = Number(it.id);
+        const cant = Number(it.cantidad) || 0;
+        const p = productos.find((x) => Number(x.id) === id);
+        if (p) {
+          const prev = Number(p.stock) || 0;
+          p.stock = Math.max(0, prev - cant);
+        } else {
+          console.warn("⚠️ Producto no encontrado al restar stock:", id);
+        }
+      });
+      guardarProductos(productos);
+      console.log("✅ Stock actualizado tras compra");
+    }
+  } catch (e) {
+    console.error("❌ Error actualizando stock tras compra:", e);
+  }
+  // === /MVP ===
+
   // 3) Escribir el archivo actualizado + subir a GitHub
   try {
-    fs.writeFileSync(registroPath, JSON.stringify(registros, null, 2), 'utf-8');
+    fs.writeFileSync(registroPath, JSON.stringify(registros, null, 2), "utf-8");
     try {
-      const contenido = fs.readFileSync(registroPath, 'utf-8');
-      const contenidoBase64 = Buffer.from(contenido).toString('base64');
+      const contenido = fs.readFileSync(registroPath, "utf-8");
+      const contenidoBase64 = Buffer.from(contenido).toString("base64");
       await subirRegistroAGitHub(contenidoBase64);
-      console.log('✅ registro.json subido a GitHub');
+      console.log("✅ registro.json subido a GitHub");
     } catch (err) {
-      console.error('❌ Error subiendo registro.json a GitHub:', err);
+      console.error("❌ Error subiendo registro.json a GitHub:", err);
     }
-    console.log('✅ Registro guardado:', nuevoRegistro);
-    return res.status(200).json({ status: 'ok' });
+    console.log("✅ Registro guardado:", nuevoRegistro);
+    return res.status(200).json({ status: "ok" });
   } catch (err) {
-    console.error('❌ Error escribiendo registro.json:', err);
-    return res.status(500).json({ status: 'error', message: err.message });
+    console.error("❌ Error escribiendo registro.json:", err);
+    return res.status(500).json({ status: "error", message: err.message });
   }
 });
 
 /**
  * GET /historial — devuelve todos los registros almacenados
  */
-app.get('/historial', (_req, res) => {
+app.get("/historial", (_req, res) => {
   if (!fs.existsSync(registroPath)) return res.json([]);
   try {
-    const data = fs.readFileSync(registroPath, 'utf-8');
+    const data = fs.readFileSync(registroPath, "utf-8");
     const registros = data ? JSON.parse(data) : [];
     res.json(registros);
   } catch (err) {
-    console.error('Error leyendo historial:', err);
+    console.error("Error leyendo historial:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -360,10 +433,167 @@ app.get('/historial', (_req, res) => {
 // 7) HEALTHCHECK Y ARRANQUE
 // ───────────────────────────────────────────────────────────────────────────────
 // Healthcheck simple para verificar que el servicio vive
-app.get('/health', (_req, res) => res.send('ok'));
+app.get("/health", (_req, res) => res.send("ok"));
 
 // Arranque (Render provee PORT por env vars)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor Express corriendo en puerto ${PORT}`);
+});
+
+/** Subir/actualizar archivo en GitHub (ruta dentro del repo) */
+async function upsertFileOnGitHub(pathInRepo, contentString, message) {
+  if (!process.env.GITHUB_TOKEN) return null;
+  try {
+    const gh = new Octokit({ auth: process.env.GITHUB_TOKEN });
+    const owner = "meowrhino";
+    const repo = "anakatana";
+    // get SHA if exists
+    let sha;
+    try {
+      const { data: current } = await gh.repos.getContent({
+        owner,
+        repo,
+        path: pathInRepo,
+      });
+      if (!Array.isArray(current)) sha = current.sha;
+    } catch (_) {}
+    const result = await gh.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: pathInRepo,
+      message,
+      content: Buffer.from(contentString).toString("base64"),
+      sha,
+    });
+    return result;
+  } catch (e) {
+    console.error("GitHub upsert error:", e.message);
+    return null;
+  }
+}
+
+/** Admin: actualizar stock en lote
+ * Body: { updates: [{id, stock}, ...] }
+ */
+app.post("/admin/stock-bulk", adminAuth, (req, res) => {
+  const updates = Array.isArray(req.body?.updates) ? req.body.updates : [];
+  if (!updates.length) return res.status(400).json({ error: "no updates" });
+
+  const productos = leerProductos();
+  let updated = 0;
+  updates.forEach((u) => {
+    const id = Number(u.id);
+    const s = Number(u.stock);
+    if (!Number.isInteger(id) || !Number.isFinite(s) || s < 0) return;
+    const p = productos.find((x) => Number(x.id) === id);
+    if (p) {
+      p.stock = s;
+      updated++;
+    }
+  });
+  guardarProductos(productos);
+
+  // opcional: subir productos.json al repo para reflejar en GitHub Pages
+  const body = JSON.stringify(productos, null, 2);
+  upsertFileOnGitHub(
+    "data/productos.json",
+    body,
+    `chore(admin): stock-bulk (${new Date().toISOString()})`
+  )
+    .then(() => {})
+    .catch(() => {});
+
+  res.json({ updated });
+});
+
+/** Admin: reemplazar productos.json completo
+ * Acepta: { productos: [...] } o directamente un array []
+ */
+app.post("/admin/productos", adminAuth, (req, res) => {
+  const payload = req.body;
+  const productos = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.productos)
+    ? payload.productos
+    : null;
+  if (!Array.isArray(productos))
+    return res.status(400).json({ error: "productos debe ser array" });
+
+  // Validación simple de estructura
+  for (const p of productos) {
+    if (typeof p !== "object" || p == null)
+      return res.status(400).json({ error: "producto inválido" });
+    if (!("id" in p) || !("precio" in p) || !("titulo" in p))
+      return res
+        .status(400)
+        .json({ error: "producto incompleto (id, titulo, precio requeridos)" });
+  }
+
+  // Persistir
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(productos, null, 2), "utf-8");
+  } catch (e) {
+    console.error("No se pudo guardar productos.json:", e);
+    return res.status(500).json({ error: "no se pudo guardar productos.json" });
+  }
+
+  // subir a GitHub para que GitHub Pages lo sirva
+  const body = JSON.stringify(productos, null, 2);
+  upsertFileOnGitHub(
+    "data/productos.json",
+    body,
+    `chore(admin): actualizar productos (${new Date().toISOString()})`
+  )
+    .then(() => {})
+    .catch(() => {});
+
+  res.json({ ok: true, count: productos.length });
+});
+
+/** Admin: exportar historial en CSV */
+app.get("/admin/historial.csv", adminAuth, (_req, res) => {
+  let registros = [];
+  try {
+    if (fs.existsSync(registroPath)) {
+      registros = JSON.parse(fs.readFileSync(registroPath, "utf-8") || "[]");
+    }
+  } catch (e) {}
+  const escape = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const csv = [
+    "id,fecha,email,total,envio,comision,productos",
+    ...registros.map((r) =>
+      [
+        r.id,
+        r.fecha,
+        r?.direccion?.email || "",
+        r.total,
+        r.precioEnvio,
+        r.precioComision,
+        (r.carrito || [])
+          .map((it) => `${it.nombre} x${it.cantidad}`)
+          .join(" / "),
+      ]
+        .map(escape)
+        .join(",")
+    ),
+  ].join("\n");
+  res.type("text/csv").send(csv);
+});
+
+/** Admin: historial paginado JSON */
+app.get("/admin/historial", adminAuth, (req, res) => {
+  let registros = [];
+  try {
+    if (fs.existsSync(registroPath)) {
+      registros = JSON.parse(fs.readFileSync(registroPath, "utf-8") || "[]");
+    }
+  } catch (e) {}
+  const total = registros.length;
+  const off = Math.max(0, parseInt(req.query.offset || "0", 10));
+  const lim = Math.max(
+    1,
+    Math.min(500, parseInt(req.query.limit || "100", 10))
+  );
+  res.json({ total, items: registros.slice(off, off + lim) });
 });
