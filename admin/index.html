@@ -1,27 +1,102 @@
-<!doctype html><html lang="es">
+<!doctype html>
+<html lang="es">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin</title>
 <link rel="stylesheet" href="../css/styles.css" />
 <style>
+  body {
+    background: #000;
+    color: #fff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
 
-  body { background:#000; color:#fff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-  .wrap { max-width: 1100px; margin: 24px auto; padding: 16px; }
-  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  input, button, a.btn { background:#111; color:#fff; border:1px solid #fff; border-radius:12px; padding:10px 14px; text-decoration:none; }
-  .muted { opacity:.7; }
+  .wrap {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 16px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  input,
+  button,
+  a.btn {
+    background: #111;
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-decoration: none;
+  }
+
+  .muted {
+    opacity: .7;
+  }
 
   /* login overlay */
-  .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.95); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-  .auth-panel { width: min(520px, 92vw); background:#000; border:1px solid #fff; border-radius:16px; padding:28px; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
-  .auth-panel h1 { margin:0 0 14px 0; font-size: 36px; }
-  .auth-panel .err { color:#ff7a7a; min-height: 1.2em; }
-  .hidden { display:none !important; }
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
 
-.grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:18px; height: 70vh; }
-.tile { border:1px solid #fff; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size: clamp(28px, 5vw, 48px); background:#111; cursor:pointer; }
-.tile:active { transform: translateY(1px); }
-.center { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
+  .auth-panel {
+    width: min(520px, 92vw);
+    background: #000;
+    border: 1px solid #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, .6);
+  }
+
+  .auth-panel h1 {
+    margin: 0 0 14px 0;
+    font-size: 36px;
+  }
+
+  .auth-panel .err {
+    color: #ff7a7a;
+    min-height: 1.2em;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    height: 100vh;
+  }
+
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(28px, 5vw, 48px);
+    cursor: pointer;
+  }
+
+  .tile:active {
+    transform: translateY(1px);
+  }
+
+  .center {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 16px;
+  }
 </style>
 <section class="center">
   <div class="grid">
@@ -45,35 +120,36 @@
 </div>
 
 <script>
-const API = 'https://anakatana-backend.onrender.com';
+  const API = 'https://anakatana-backend.onrender.com';
 
-async function verifyToken(t) {
-  try {
-    const r = await fetch(`${API}/admin/historial?limit=1`, { headers: { 'Authorization':'Bearer ' + t } });
-    if (r.status === 404) document.getElementById('authHint').textContent = 'Tu backend no tiene las rutas /admin desplegadas (404)';
-    return r.ok;
-  } catch(e) { return false; }
-}
-
-async function tryAutoLogin() {
-  const saved = localStorage.getItem('ADMIN_TOKEN') || '';
-  if (!saved) return;
-  if (await verifyToken(saved)) {
-    document.getElementById('auth').classList.add('hidden');
+  async function verifyToken(t) {
+    try {
+      const r = await fetch(`${API}/admin/historial?limit=1`, { headers: { 'Authorization': 'Bearer ' + t } });
+      if (r.status === 404) document.getElementById('authHint').textContent = 'Tu backend no tiene las rutas /admin desplegadas (404)';
+      return r.ok;
+    } catch (e) { return false; }
   }
-}
 
-document.getElementById('authGo').onclick = async () => {
-  const t = document.getElementById('authToken').value.trim();
-  const ok = await verifyToken(t);
-  if (ok) {
-    localStorage.setItem('ADMIN_TOKEN', t);
-    document.getElementById('auth').classList.add('hidden');
-  } else {
-    document.getElementById('authErr').textContent = 'Clave incorrecta o backend sin rutas /admin.';
+  async function tryAutoLogin() {
+    const saved = localStorage.getItem('ADMIN_TOKEN') || '';
+    if (!saved) return;
+    if (await verifyToken(saved)) {
+      document.getElementById('auth').classList.add('hidden');
+    }
   }
-};
 
-tryAutoLogin();
+  document.getElementById('authGo').onclick = async () => {
+    const t = document.getElementById('authToken').value.trim();
+    const ok = await verifyToken(t);
+    if (ok) {
+      localStorage.setItem('ADMIN_TOKEN', t);
+      document.getElementById('auth').classList.add('hidden');
+    } else {
+      document.getElementById('authErr').textContent = 'Clave incorrecta o backend sin rutas /admin.';
+    }
+  };
+
+  tryAutoLogin();
 </script>
+
 </html>

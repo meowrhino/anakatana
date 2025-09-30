@@ -1,27 +1,104 @@
-<!doctype html><html lang="es">
+<!doctype html>
+<html lang="es">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin · Tickets</title>
 <link rel="stylesheet" href="../css/styles.css" />
 <style>
+  body {
+    background: #000;
+    color: #fff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
 
-  body { background:#000; color:#fff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-  .wrap { max-width: 1100px; margin: 24px auto; padding: 16px; }
-  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  input, button, a.btn { background:#111; color:#fff; border:1px solid #fff; border-radius:12px; padding:10px 14px; text-decoration:none; }
-  .muted { opacity:.7; }
+  .wrap {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 16px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  input,
+  button,
+  a.btn {
+    background: #111;
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-decoration: none;
+  }
+
+  .muted {
+    opacity: .7;
+  }
 
   /* login overlay */
-  .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.95); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-  .auth-panel { width: min(520px, 92vw); background:#000; border:1px solid #fff; border-radius:16px; padding:28px; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
-  .auth-panel h1 { margin:0 0 14px 0; font-size: 36px; }
-  .auth-panel .err { color:#ff7a7a; min-height: 1.2em; }
-  .hidden { display:none !important; }
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
 
-ul { list-style:none; padding:0; margin:16px 0; }
-.ticket { background:#fff; color:#000; border:1px dashed #000; padding:12px 14px; border-radius:8px; margin-bottom:12px; }
-.ticket .head { font-weight:700; font-size:14px; display:flex; justify-content:space-between; }
-.ticket .lines { margin-top:6px; font-size:12px; }
+  .auth-panel {
+    width: min(520px, 92vw);
+    background: #000;
+    border: 1px solid #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, .6);
+  }
+
+  .auth-panel h1 {
+    margin: 0 0 14px 0;
+    font-size: 36px;
+  }
+
+  .auth-panel .err {
+    color: #ff7a7a;
+    min-height: 1.2em;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+  }
+
+  .ticket {
+    background: #fff;
+    color: #000;
+    border: 1px dashed #000;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ticket .head {
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .ticket .lines {
+    margin-top: 6px;
+    font-size: 12px;
+  }
 </style>
 <section class="wrap">
   <h1>Tickets de compra</h1>
@@ -49,46 +126,46 @@ ul { list-style:none; padding:0; margin:16px 0; }
 </div>
 
 <script>
-const API = 'https://anakatana-backend.onrender.com';
-let cache = [];
-let token = '';
+  const API = 'https://anakatana-backend.onrender.com';
+  let cache = [];
+  let token = '';
 
-// token local
-const tokenInput = document.getElementById('token');
-tokenInput.value = localStorage.getItem('ADMIN_TOKEN') || '';
-tokenInput.addEventListener('input', e => localStorage.setItem('ADMIN_TOKEN', e.target.value));
+  // token local
+  const tokenInput = document.getElementById('token');
+  tokenInput.value = localStorage.getItem('ADMIN_TOKEN') || '';
+  tokenInput.addEventListener('input', e => localStorage.setItem('ADMIN_TOKEN', e.target.value));
 
-async function verifyToken(t) {
-  try {
-    const r = await fetch(`${API}/admin/historial?limit=1`, { headers: { 'Authorization':'Bearer ' + t } });
-    if (r.status === 404) document.getElementById('authHint').textContent = 'Tu backend no tiene las rutas /admin desplegadas (404)';
-    return r.ok;
-  } catch (e) { return false; }
-}
-async function ensureAuth() {
-  token = localStorage.getItem('ADMIN_TOKEN') || tokenInput.value.trim();
-  if (!token || !(await verifyToken(token))) {
-    document.getElementById('auth').classList.remove('hidden');
-    return false;
+  async function verifyToken(t) {
+    try {
+      const r = await fetch(`${API}/admin/historial?limit=1`, { headers: { 'Authorization': 'Bearer ' + t } });
+      if (r.status === 404) document.getElementById('authHint').textContent = 'Tu backend no tiene las rutas /admin desplegadas (404)';
+      return r.ok;
+    } catch (e) { return false; }
   }
-  document.getElementById('auth').classList.add('hidden');
-  return true;
-}
-document.getElementById('authGo').onclick = async () => {
-  const t = document.getElementById('authToken').value.trim();
-  const ok = await verifyToken(t);
-  if (ok) {
-    token = t;
-    localStorage.setItem('ADMIN_TOKEN', t);
-    tokenInput.value = t;
+  async function ensureAuth() {
+    token = localStorage.getItem('ADMIN_TOKEN') || tokenInput.value.trim();
+    if (!token || !(await verifyToken(token))) {
+      document.getElementById('auth').classList.remove('hidden');
+      return false;
+    }
     document.getElementById('auth').classList.add('hidden');
-  } else {
-    document.getElementById('authErr').textContent = 'Clave incorrecta o backend sin rutas /admin.';
+    return true;
   }
-};
+  document.getElementById('authGo').onclick = async () => {
+    const t = document.getElementById('authToken').value.trim();
+    const ok = await verifyToken(t);
+    if (ok) {
+      token = t;
+      localStorage.setItem('ADMIN_TOKEN', t);
+      tokenInput.value = t;
+      document.getElementById('auth').classList.add('hidden');
+    } else {
+      document.getElementById('authErr').textContent = 'Clave incorrecta o backend sin rutas /admin.';
+    }
+  };
 
-function ticketHTML(r){
-  return `
+  function ticketHTML(r) {
+    return `
     <li class="ticket">
       <div class="head">
         <span><strong>${r.id}</strong></span>
@@ -96,43 +173,44 @@ function ticketHTML(r){
       </div>
       <div class="lines">Email: ${r?.direccion?.email || ''}</div>
       <div class="lines">Total: ${r.total}€ (Env: ${r.precioEnvio}€ · Fee: ${r.precioComision}€)</div>
-      <div class="lines">${(r.carrito||[]).map(it=>`${it.nombre} x${it.cantidad}`).join(' · ')}</div>
+      <div class="lines">${(r.carrito || []).map(it => `${it.nombre} x${it.cantidad}`).join(' · ')}</div>
     </li>`;
-}
-function pintar(list){
-  document.getElementById('lista').innerHTML = list.map(ticketHTML).join('');
-}
+  }
+  function pintar(list) {
+    document.getElementById('lista').innerHTML = list.map(ticketHTML).join('');
+  }
 
-document.getElementById('btnCargar').onclick = async ()=>{
-  const ok = await ensureAuth(); if (!ok) return;
-  const r = await fetch(`${API}/admin/historial?limit=500`, { headers: { 'Authorization':'Bearer ' + token } });
-  if (!r.ok) { alert('Error ' + r.status + ' al cargar historial'); return; }
-  const data = await r.json();
-  cache = data.items || [];
-  pintar(cache);
-};
+  document.getElementById('btnCargar').onclick = async () => {
+    const ok = await ensureAuth(); if (!ok) return;
+    const r = await fetch(`${API}/admin/historial?limit=500`, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) { alert('Error ' + r.status + ' al cargar historial'); return; }
+    const data = await r.json();
+    cache = data.items || [];
+    pintar(cache);
+  };
 
-document.getElementById('btnCSV').onclick = async (e)=>{
-  e.preventDefault();
-  const ok = await ensureAuth(); if (!ok) return;
-  const r = await fetch(`${API}/admin/historial.csv`, { headers: { 'Authorization':'Bearer ' + token } });
-  if (!r.ok) { alert('Error ' + r.status + ' descargando CSV'); return; }
-  const blob = await r.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'historial.csv';
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-};
+  document.getElementById('btnCSV').onclick = async (e) => {
+    e.preventDefault();
+    const ok = await ensureAuth(); if (!ok) return;
+    const r = await fetch(`${API}/admin/historial.csv`, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) { alert('Error ' + r.status + ' descargando CSV'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'historial.csv';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
 
-document.getElementById('q').oninput = e => {
-  const q = e.target.value.toLowerCase();
-  const f = cache.filter(r =>
-    String(r.id).toLowerCase().includes(q) ||
-    (r?.direccion?.email||'').toLowerCase().includes(q) ||
-    (r.carrito||[]).some(it => (it.nombre||'').toLowerCase().includes(q))
-  );
-  pintar(f);
-};
+  document.getElementById('q').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    const f = cache.filter(r =>
+      String(r.id).toLowerCase().includes(q) ||
+      (r?.direccion?.email || '').toLowerCase().includes(q) ||
+      (r.carrito || []).some(it => (it.nombre || '').toLowerCase().includes(q))
+    );
+    pintar(f);
+  };
 
-document.addEventListener('DOMContentLoaded', ensureAuth);
+  document.addEventListener('DOMContentLoaded', ensureAuth);
 </script>
+
 </html>

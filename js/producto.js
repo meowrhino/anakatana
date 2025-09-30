@@ -116,6 +116,12 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? producto.galeria
       : [producto.img];
 
+    // ✅ NUEVO: si solo hay 1 imagen, no renderizamos thumbs ni flecha
+    if (imagenes.length <= 1) {
+      mainImg.src = imagenes[0];
+      return;
+    }
+
     let idx = 0;
     const setMain = (i) => {
       idx = ((i % imagenes.length) + imagenes.length) % imagenes.length;
