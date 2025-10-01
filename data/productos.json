@@ -229,6 +229,7 @@
     "rebajas": "no",
     "precioRebajas": "",
     "stock": 5,
-    "soldOut": "no"
+    "soldOut": "no",
+    "galeria": ["img/UjLcjUoUE0.webp", "img/360_1.JPG", "img/T01_1.jpeg"] 
   }
 ]

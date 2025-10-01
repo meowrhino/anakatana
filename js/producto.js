@@ -5,10 +5,8 @@ function obtenerPrecio(producto) {
     producto.rebajas === "si" && producto.precioRebajas
       ? producto.precioRebajas
       : producto.precio;
-  return parseFloat(base.replace(",", "."));
+  return parseFloat(String(base).replace(",", "."));
 }
-
-// // // // // const talla = document.getElementById("select-talla")?.value || null;
 
 window.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -16,7 +14,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const contenedor = document.getElementById("detalle-producto");
 
   if (!id) {
-    contenedor.innerHTML = "<p class='error'>Producto no encontrado.</p>";
+    if (contenedor) contenedor.innerHTML = "<p class='error'>Producto no encontrado.</p>";
     return;
   }
 
@@ -30,22 +28,16 @@ window.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const estaRebajado =
-      producto.precio_original && producto.precio_original > producto.precio;
     const estaAgotado = producto.soldOut === "si" || producto.stock === 0;
+    const makingTime =
+      "All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3";
 
-    // Texto constante
-    const makingTime = `All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3`;
-
+    // --- Tallas (dropdown) ---
     let tallas = "";
-
     if (producto.tallas?.length) {
       const opciones = producto.tallas
         .map((t, i) => {
-          const texto = `${t.descripcion}${
-            t.id === producto.tallaModelo ? " (seen in model)" : ""
-          }`;
-          return `<div class="dropdown-option" data-index="${i}" data-id="${t.id}" data-desc="${t.descripcion}" role="option"><strong>talla ${t.id}</strong> <span class="desc">${t.descripcion}</span></div>`;
+          return `<div class="dropdown-option" data-index="${i}" data-id="${t.id}" data-desc="${t.descripcion}" role="option"><strong>talla ${t.id}</strong> <span class="desc">${t.descripcion || ""}</span></div>`;
         })
         .join("");
 
@@ -54,18 +46,20 @@ window.addEventListener("DOMContentLoaded", async () => {
           ? `<div class="dropdown-option" data-index="custom" data-id="custom" role="option">custom (send mail)</div>`
           : "";
 
+      const sel =
+        producto.tallas.find((t) => t.id === producto.tallaModelo) ||
+        producto.tallas[0];
+
       tallas = `
-  <div class="talla-wrapper">
-    <div class="dropdown" role="listbox" tabindex="0" data-selected="${
-      producto.tallas.findIndex((t) => t.id === producto.tallaModelo) || 0
-    }" data-talla-id="${(producto.tallas.find((t)=>t.id===producto.tallaModelo)||producto.tallas[0])?.id}">
-      <div class="dropdown-toggle">${
-        (() => { const sel=producto.tallas.find((t)=>t.id===producto.tallaModelo)||producto.tallas[0]; return `<strong>talla ${sel?.id}</strong> <span class=\"desc\">${sel?.descripcion||""}</span>`; })()
-      }</div>
-      <div class="dropdown-menu">${opciones}${extraOption}</div>
-    </div>
-  </div>
-`;
+        <div class="talla-wrapper">
+          <div class="dropdown" role="listbox" tabindex="0"
+               data-selected="${producto.tallas.findIndex((t) => t.id === (sel?.id)) || 0}"
+               data-talla-id="${sel?.id || ""}">
+            <div class="dropdown-toggle"><strong>talla ${sel?.id}</strong> <span class="desc">${sel?.descripcion || ""}</span></div>
+            <div class="dropdown-menu">${opciones}${extraOption}</div>
+          </div>
+        </div>
+      `;
     }
 
     // Colección
@@ -73,30 +67,33 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? `<p class="coleccion">${producto["colección"]}<sup> collection</sup></p>`
       : "";
 
-    // Botón o mensaje según stock
+    // CTA / stock
     const botonCarrito = !estaAgotado
       ? `<button class="btn-añadir-carrito">Añadir al carrito</button>`
       : `<p class="agotado-msg">Este producto está agotado.</p>`;
 
-    // HTML principal
+    // ====== MARKUP ======
+    // Layout: grid (definido en CSS) — móvil 1 col (imagen arriba ~66dvh), desktop 1/3 vs 2/3.
     contenedor.innerHTML = `
       <div class="producto-layout">
-        <div class="producto-img-container">
-          <img src="${producto.img}" alt="${
-      producto.titulo
-    }" class="producto-img" />
+        <div class="producto-media">
+          <div class="producto-img-container">
+            <img src="${producto.img}" alt="${producto.titulo}" class="producto-img" />
+          </div>
+          <div class="producto-gallery" aria-label="Galería de imágenes"></div>
         </div>
+
         <div class="producto-info">
           <div class="home_titulo_precio">
             <span class="titulo">${producto.titulo}</span>
-<p class="precio">
-  ${
-    producto.rebajas === "si" && producto.precioRebajas
-      ? `<span class="precio--tachado">${producto.precio}€</span>
-         <span class="precio--rebajado">${producto.precioRebajas}€</span>`
-      : `<span>${producto.precio}€</span>`
-  }
-</p>
+            <p class="precio">
+              ${
+                producto.rebajas === "si" && producto.precioRebajas
+                  ? `<span class="precio--tachado">${producto.precio}€</span>
+                     <span class="precio--rebajado">${producto.precioRebajas}€</span>`
+                  : `<span>${producto.precio}€</span>`
+              }
+            </p>
           </div>
           <p class="descripcion">${producto.descripcion}</p>
           ${tallas}
@@ -106,61 +103,69 @@ window.addEventListener("DOMContentLoaded", async () => {
         </div>
       </div>
     `;
-  // --- Galería de imágenes (usa producto.galeria o la principal) ---
-  (function initGaleria(){
-    const cont = document.querySelector('.producto-img-container');
-    const mainImg = cont?.querySelector('.producto-img');
-    if (!cont || !mainImg) return;
 
-    const imagenes = (producto.galeria && producto.galeria.length)
-      ? producto.galeria
-      : [producto.img];
+    // --- Galería: thumbs bajo la imagen, centrados y alineados con ésta ---
+    (function initGaleria() {
+      const media = document.querySelector(".producto-media");
+      const cont = media?.querySelector(".producto-img-container");
+      const mainImg = cont?.querySelector(".producto-img");
+      const gallery = media?.querySelector(".producto-gallery");
+      if (!media || !cont || !mainImg || !gallery) return;
 
-    // ✅ NUEVO: si solo hay 1 imagen, no renderizamos thumbs ni flecha
-    if (imagenes.length <= 1) {
-      mainImg.src = imagenes[0];
-      return;
-    }
+      const imagenes =
+        producto.galeria && producto.galeria.length
+          ? producto.galeria
+          : [producto.img];
 
-    let idx = 0;
-    const setMain = (i) => {
-      idx = ((i % imagenes.length) + imagenes.length) % imagenes.length;
-      mainImg.src = imagenes[idx];
-      cont.querySelectorAll('.producto-thumbs .thumb').forEach((b, j) => {
-        b.classList.toggle('active', j === idx);
+      if (imagenes.length <= 1) {
+        mainImg.src = imagenes[0];
+        gallery.remove(); // no mostramos barra de thumbs si sólo hay 1
+        return;
+      }
+
+      let idx = 0;
+      const setMain = (i) => {
+        idx = ((i % imagenes.length) + imagenes.length) % imagenes.length;
+        mainImg.src = imagenes[idx];
+        thumbsStrip
+          .querySelectorAll(".thumb")
+          .forEach((b, j) => b.classList.toggle("active", j === idx));
+      };
+
+      const thumbsStrip = document.createElement("div");
+      thumbsStrip.className = "producto-thumbs";
+
+      imagenes.forEach((src, i) => {
+        const btn = document.createElement("button");
+        btn.className = "thumb" + (i === 0 ? " active" : "");
+        btn.setAttribute("aria-label", `Imagen ${i + 1} de ${imagenes.length}`);
+        const im = document.createElement("img");
+        im.src = src;
+        im.alt = `miniatura ${i + 1}`;
+        btn.appendChild(im);
+        btn.addEventListener("click", () => setMain(i));
+        thumbsStrip.appendChild(btn);
       });
-    };
 
-    const strip = document.createElement('div');
-    strip.className = 'producto-thumbs';
-    imagenes.forEach((src, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'thumb' + (i === 0 ? ' active' : '');
-      const im = document.createElement('img');
-      im.src = src; im.alt = `miniatura ${i+1}`;
-      btn.appendChild(im);
-      btn.addEventListener('click', () => setMain(i));
-      strip.appendChild(btn);
-    });
-    cont.appendChild(strip);
+      const next = document.createElement("button");
+      next.className = "thumbs-next";
+      next.textContent = "›";
+      next.setAttribute("aria-label", "Siguiente imagen");
+      next.addEventListener("click", () => setMain(idx + 1));
 
-    const next = document.createElement('button');
-    next.className = 'thumbs-next';
-    next.textContent = '›';
-    next.addEventListener('click', () => setMain(idx + 1));
-    cont.appendChild(next);
+      gallery.appendChild(thumbsStrip);
+      gallery.appendChild(next);
 
-    setMain(0);
-  })();
-
+      setMain(0);
+    })();
   } catch (e) {
-    contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
+    if (contenedor) contenedor.innerHTML = "<p class='error'>Error al cargar el producto.</p>";
   }
 
+  // Añadir al carrito
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("btn-añadir-carrito")) {
-      const id = parseInt(new URLSearchParams(window.location.search).get("id"));
-      const dropdown = document.querySelector('.dropdown');
+      const dropdown = document.querySelector(".dropdown");
       const tallaId = dropdown?.dataset.tallaId || null;
       const talla = tallaId ? `talla ${tallaId}` : null;
 
@@ -176,93 +181,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 });
 
+// Texto de acordeón si existe (tallas)
 document.addEventListener("DOMContentLoaded", () => {
   const acordeon = document.querySelector(".tallas-acordeon");
   const texto = acordeon?.querySelector(".summary-text");
-
   if (acordeon && texto) {
     const updateText = () => {
       texto.textContent = acordeon.open ? "hide sizes" : "see sizes";
     };
     acordeon.addEventListener("toggle", updateText);
-    updateText(); // inicial
+    updateText();
   }
 });
 
-// POPUP de imagen al hacer click
-document.addEventListener("DOMContentLoaded", () => {
-  const img = document.querySelector(".producto-img");
-  if (!img) return;
-
-  // Crear el overlay
-  const overlay = document.createElement("div");
-  overlay.id = "imagen-popup";
-  overlay.innerHTML = `
-    <div class="popup-img-wrapper">
-      <img src="${img.src}" alt="${img.alt}">
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  // Abrir al hacer click
-  img.addEventListener("click", () => {
-    overlay.classList.add("visible");
-  });
-
-  // Cerrar al hacer click fuera o en la imagen
-  overlay.addEventListener("click", () => {
-    overlay.classList.remove("visible");
-  });
-});
-
-document.addEventListener("click", (e) => {
-  const toggle = e.target.closest(".dropdown-toggle");
-  const option = e.target.closest(".dropdown-option");
-
-  if (toggle) {
-    // Cerrar otros dropdowns abiertos
-    document.querySelectorAll(".dropdown.open").forEach((d) => {
-      if (d !== toggle.closest(".dropdown")) d.classList.remove("open");
-    });
-    // Abrir o cerrar el actual
-    toggle.closest(".dropdown").classList.toggle("open");
-    return;
-  }
-
-  if (option) {
-    const container = option.closest(".dropdown");
-    const toggle = container.querySelector(".dropdown-toggle");
-    toggle.innerHTML = option.innerHTML;
-    container.classList.remove("open");
-    container.dataset.selected = option.dataset.index;
-    container.dataset.tallaId = option.dataset.id || '';
-    return;
-  }
-
-  // Si se clicó fuera, cerrar todos
-  document
-    .querySelectorAll(".dropdown.open")
-    .forEach((d) => d.classList.remove("open"));
-});
-
-// --- ajuste dinámico de ratio en móvil ---
-(function () {
-  // Si quieres que solo corra en móvil, comprueba el ancho:
-  if (window.innerWidth < 480) {
-    document.querySelectorAll(".producto-img-container").forEach((wrapper) => {
-      const img = wrapper.querySelector("img");
-
-      function ajustarRatio() {
-        const ratio = img.naturalHeight / img.naturalWidth;
-        wrapper.style.paddingBottom = `${ratio * 100}%`;
-      }
-
-      if (img.complete) {
-        // ya estuvo en caché
-        ajustarRatio();
-      } else {
-        img.addEventListener("load", ajustarRatio);
-      }
-    });
-  }
-})();
+// Eliminado: overlay fullscreen al clicar imagen (lightbox)
+// Eliminado: ajuste dinámico de ratio en móvil (lo gestiona CSS)
