@@ -191,6 +191,28 @@ a:hover {
   }
 }
 
+/* HERO dentro de la grid de la home */
+#home-hero {
+  grid-column: 1 / -1;        /* ocupa todo el ancho de columnas */
+  height: 70dvh;               /* 70% de la altura de la ventana */
+  display: grid;
+  place-items: center;         /* centra la imagen */
+  overflow: hidden;
+  position: relative;
+}
+
+#home-hero img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;            /* escala por height del contenedor */
+  width: auto;             /* el ancho se calcula desde el alto */
+  max-width: none;         /* permite que el ancho supere el contenedor si hace falta */
+  display: block;
+  object-fit: contain;     /* mantiene proporción */
+}
+
 /* =========================================================
    HOME · CARD DE PRODUCTO
    ========================================================= */
@@ -215,14 +237,14 @@ a:hover {
   font-family: "Noto Serif JP", serif;
   font-weight: 400;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin: 1rem 0;
-  font-size: var(--clamp1);
+  flex-direction: column;      /* título arriba, precios debajo */
+  align-items: flex-start;     /* alineado a la izquierda */
+  gap: 0.35rem;
+  margin: 0.6rem 0;
+  font-size: clamp(0.8rem, 1.4vw, 1.1rem); /* más pequeño en home */
 }
 .home_titulo_precio .precio {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .precios {
@@ -231,13 +253,14 @@ a:hover {
   flex-direction: row;
   gap: 0.5rem;
   align-items: baseline;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 
 .precio,
 .precio--rebajado {
   font-weight: bold;
+  font-size: 0.95em;
 }
 .home_titulo_precio .precio--tachado {
   text-decoration: line-through;

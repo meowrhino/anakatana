@@ -15,9 +15,25 @@ async function cargarProductos() {
 }
 
 function renderProductos(productos, contenedor) {
-  // Limpiar contenedor antes de renderizar
-  contenedor.innerHTML = "";
+  // --- Preservar el HERO si existe ---
+  const hero = contenedor.querySelector("#home-hero");
 
+  // Elimina sólo los nodos de productos (todo menos el hero)
+  Array.from(contenedor.children).forEach((n) => {
+    if (n.id !== "home-hero") n.remove();
+  });
+
+  // Si por cualquier motivo no existe (p.ej. primera carga), lo creamos
+  if (!hero) {
+    const nuevoHero = document.createElement("div");
+    nuevoHero.id = "home-hero";
+    nuevoHero.setAttribute("role", "img");
+    nuevoHero.setAttribute("aria-label", "Hifas hero");
+    nuevoHero.innerHTML = `<img src="img/hifas_home.png" alt="Hifas — hero home">`;
+    contenedor.prepend(nuevoHero);
+  }
+
+  // --- Render del resto de productos debajo del hero ---
   productos.forEach((producto) => {
     const divProducto = document.createElement("div");
     divProducto.className = "producto";
@@ -62,7 +78,7 @@ function renderProductos(productos, contenedor) {
       imagenHTML = `<div class="no-data">no data</div>`;
     }
 
-    // Título y precio
+    // Título y precio (precios siempre a la izquierda; si hay rebajas -> primero normal tachado, luego rebajado)
     const tituloHTML = `<span class="titulo">${producto.titulo}</span>`;
     const precioHTML = `
   <div class="precios">
@@ -87,7 +103,6 @@ function renderProductos(productos, contenedor) {
     });
 
     contenedor.appendChild(divProducto);
-    //activarDescripcionHover(divProducto);
   });
 }
 
