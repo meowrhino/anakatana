@@ -885,7 +885,7 @@ body[data-page-type="about"] {
 }
 @media (min-width: 960px) {
   .producto-img-container {
-    min-height: unset;
+    min-height: unset; 
     height: auto;
     align-self: start;
   }
@@ -934,4 +934,49 @@ body[data-page-type="about"] {
 .thumbs-next:hover {
   background: #fff;
   color: #000;
+}
+
+
+/* =========================================================
+   POLICY PAGE (términos y condiciones / privacidad)
+   ========================================================= */
+#policy-container {
+  position: relative;
+  max-width: 800px;
+  margin: 10vh auto;
+  padding: 0 5vw 10vh;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: "IBM Plex Sans", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  line-height: 1.6;
+}
+
+#policy-container h1,
+#policy-container h2 {
+  font-family: "Noto Serif JP", serif;
+  font-weight: 600;
+}
+
+#policy-container h1 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  margin-bottom: 2rem;
+}
+
+#policy-container h2 {
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  margin-top: 1.8rem;
+}
+
+#policy-container p,
+#policy-container li {
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  color: #fff;
+}
+
+#policy-container ul {
+  padding-left: 1.2rem;
+  list-style: disc;
 }
