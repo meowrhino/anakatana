@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     bottomRight.innerHTML = `
       <a href="about.html" class="boton-fijo">about</a>
+      <a href="politicas.html" class="boton-fijo">políticas</a>
       <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
     `;
   }
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bottomLeft.innerHTML = `
       <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
       <a href="about.html" class="boton-fijo">about</a>
+      <a href="politicas.html" class="boton-fijo">políticas</a>
       <a href="index.html" class="boton-fijo">home</a>
     `;
   }
@@ -50,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bottomLeft.innerHTML = `
       <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
       <a href="about.html" class="boton-fijo">about</a>
+      <a href="politicas.html" class="boton-fijo">políticas</a>
       <a href="index.html" class="boton-fijo">home</a>
     `;
   }
@@ -58,6 +61,21 @@ document.addEventListener("DOMContentLoaded", () => {
   if (pageType === "about") {
     bottomRight.innerHTML = `
       <a href="index.html" class="boton-fijo">home</a>
+      <a href="politicas.html" class="boton-fijo">políticas</a>
+      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
+    `;
+    bottomLeft.innerHTML = `
+      <a href="#" id="btn-carrito" class="boton-fijo">
+        carrito<sup id="carrito-count"></sup>
+      </a>
+    `;
+  }
+
+  // ==== POLICY ====
+  if (pageType === "policy") {
+    bottomRight.innerHTML = `
+      <a href="index.html" class="boton-fijo">home</a>
+      <a href="about.html" class="boton-fijo">about</a>
       <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
     `;
     bottomLeft.innerHTML = `

@@ -941,42 +941,54 @@ body[data-page-type="about"] {
    POLICY PAGE (términos y condiciones / privacidad)
    ========================================================= */
 #policy-container {
-  position: relative;
-  max-width: 800px;
-  margin: 10vh auto;
-  padding: 0 5vw 10vh;
-  box-sizing: border-box;
+  position: fixed;
+  top: 10vh;
+  bottom: 10vh;
+  left: 5vw;   /* como la home */
+  right: 5vw;  /* como la home */
+  margin: 0;
   overflow-y: auto;
-  font-family: "IBM Plex Sans", sans-serif;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  line-height: 1.6;
+  box-sizing: border-box;
+  display: grid;                  /* grid como en la home */
+  grid-template-columns: 1fr;     /* una sola columna */
+  align-content: start;           /* que el contenido nazca arriba */
+  justify-items: center;          /* centrado horizontal del bloque interno */
+  scroll-behavior: smooth;
 }
 
-#policy-container h1,
-#policy-container h2 {
+#policy-content {
+  max-width: 380px;              /* igual que about */
+  width: 100%;
+  margin: 0;                     /* centrado lo hace el grid del contenedor */
+  display: block;                /* no necesitamos flex aquí */
+  line-height: 1.6;
+  font-family: "IBM Plex Sans", sans-serif;
+  padding-bottom: 2rem;          /* pequeño colchón al final para que no "pegue" con el borde */
+}
+
+#policy-content h1,
+#policy-content h2 {
   font-family: "Noto Serif JP", serif;
   font-weight: 600;
 }
 
-#policy-container h1 {
+#policy-content h1 {
   font-size: clamp(1.6rem, 3vw, 2.4rem);
   margin-bottom: 2rem;
 }
 
-#policy-container h2 {
+#policy-content h2 {
   font-size: clamp(1.2rem, 2vw, 1.6rem);
   margin-top: 1.8rem;
 }
 
-#policy-container p,
-#policy-container li {
+#policy-content p,
+#policy-content li {
   font-size: clamp(0.9rem, 1.2vw, 1rem);
   color: #fff;
 }
 
-#policy-container ul {
+#policy-content ul {
   padding-left: 1.2rem;
   list-style: disc;
 }
