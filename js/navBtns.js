@@ -35,14 +35,14 @@ document.addEventListener("DOMContentLoaded", () => {
       </a>
     `;
     bottomLeft.innerHTML = `
+    <a href="index.html" class="boton-fijo">home</a>
+    <a href="about.html" class="boton-fijo">about</a>
+    <a href="politicas.html" class="boton-fijo">políticas</a>
       <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
-      <a href="about.html" class="boton-fijo">about</a>
-      <a href="politicas.html" class="boton-fijo">políticas</a>
-      <a href="index.html" class="boton-fijo">home</a>
     `;
   }
 
-    // ==== checkout ====
+  // ==== checkout ====
   if (pageType === "checkout") {
     bottomRight.innerHTML = `
       <a href="#" id="btn-carrito" class="boton-fijo">
@@ -50,10 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
       </a>
     `;
     bottomLeft.innerHTML = `
-      <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
-      <a href="about.html" class="boton-fijo">about</a>
-      <a href="politicas.html" class="boton-fijo">políticas</a>
-      <a href="index.html" class="boton-fijo">home</a>
+    <a href="index.html" class="boton-fijo">home</a>
+    <a href="about.html" class="boton-fijo">about</a>
+    <a href="politicas.html" class="boton-fijo">políticas</a>
+    <a href="mailto:hifas@algo.com" class="boton-fijo">mail</a>
     `;
   }
 

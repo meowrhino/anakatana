@@ -163,15 +163,15 @@ a:hover {
    ========================================================= */
 #galeria-productos {
   position: fixed;
-  top: 10vh;
-  bottom: 10vh;
+  top: 8vh;
+  bottom: 8vh;
   left: 5vw;
   right: 5vw;
   display: grid;
   gap: 2rem;
   grid-template-columns: repeat(2, 1fr);
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible;
   scroll-behavior: smooth;
 }
 
@@ -197,20 +197,17 @@ a:hover {
   height: 70dvh;               /* 70% de la altura de la ventana */
   display: grid;
   place-items: center;         /* centra la imagen */
-  overflow: hidden;
-  position: relative;
+  overflow: visible;
 }
 
 #home-hero img {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  height: 100%;            /* escala por height del contenedor */
-  width: auto;             /* el ancho se calcula desde el alto */
-  max-width: none;         /* permite que el ancho supere el contenedor si hace falta */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;    /* muestra la imagen completa dentro de 70dvh */
   display: block;
-  object-fit: contain;     /* mantiene proporción */
+  position: static;       /* dejamos que la grid centre el contenido */
+  transform: none;
+  max-width: 100%;        /* evita overflow horizontal */
 }
 
 /* =========================================================
@@ -396,7 +393,7 @@ a:hover {
   flex-direction: column;
   position: fixed;
   top: 0vh;
-  bottom: 10vh;
+  bottom: 8vh;
   left: 5vh;
   right: 5vh;
   scroll-behavior: smooth;
