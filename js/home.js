@@ -84,8 +84,10 @@ function renderProductos(productos, contenedor) {
   <div class="precios">
     ${
       enRebajas
-        ? `<span class="precio--tachado">${producto.precio}€</span>
-           <span class="precio--rebajado">${producto.precioRebajas}€</span>`
+      ? `
+      <span class="precio--rebajado">${producto.precioRebajas}€</span>
+      <span class="precio--tachado">${producto.precio}€</span>
+      `
         : `<span class="precio">${producto.precio}€</span>`
     }
   </div>`;

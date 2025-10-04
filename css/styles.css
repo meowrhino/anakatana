@@ -198,16 +198,19 @@ a:hover {
   display: grid;
   place-items: center;         /* centra la imagen */
   overflow: visible;
+  position: relative;
 }
 
 #home-hero img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;    /* muestra la imagen completa dentro de 70dvh */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;            /* escala por height del contenedor */
+  width: auto;             /* el ancho se calcula desde el alto */
+  max-width: none;         /* permite que el ancho supere el contenedor si hace falta */
   display: block;
-  position: static;       /* dejamos que la grid centre el contenido */
-  transform: none;
-  max-width: 100%;        /* evita overflow horizontal */
+  object-fit: contain;     /* mantiene proporción */
 }
 
 /* =========================================================
