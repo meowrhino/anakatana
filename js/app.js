@@ -343,10 +343,8 @@ function abrirCarrito() {
   const resumen = document.createElement("div");
   resumen.className = "carrito-total";
   resumen.innerHTML = `
-    <p>Productos: <strong id="res-subtotal">${subtotal.toFixed(2)}€</strong></p>
-    <p>Envío: <strong id="res-envio">—</strong></p>
-    <p>Comisión: <strong id="res-comision">—</strong></p>
-    <p>Total: <strong id="res-total">${subtotal.toFixed(2)}€</strong></p>
+    <p>Artículos en carrito: <strong id="res-items">${carrito.reduce((s, it) => s + it.cantidad, 0)}</strong></p>
+    <p class="carrito-nota">El importe final se calcula en el <em>checkout</em>.</p>
   `;
 
   // Bloque promo NL (10% descuento)
@@ -379,26 +377,9 @@ function abrirCarrito() {
 
   // 6) listener de cambio de zona
   selectZonaEl.addEventListener("change", (e) => {
-    zonaSeleccionada = e.target.value; // guardamos
+    zonaSeleccionada = e.target.value;
     localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
-
-    const textoEnvio = envioWrapper.querySelector("#envio-estimado");
-    const { envio, comision, total } = window.recalcularTotales(
-      carrito,
-      zonaSeleccionada
-    );
-
-    if (zonaSeleccionada) {
-      textoEnvio.textContent = `Envío estimado: ${envio.toFixed(2)}€`;
-      resEnvio.textContent = `${envio.toFixed(2)}€`;
-      resComision.textContent = `${comision.toFixed(2)}€`;
-      resTotal.textContent = `${total.toFixed(2)}€`;
-    } else {
-      textoEnvio.textContent = "";
-      resEnvio.textContent = "—";
-      resComision.textContent = "—";
-      resTotal.textContent = `${subtotal.toFixed(2)}€`;
-    }
+    // Sin cálculo económico en carrito: se mostrará en checkout.
   });
 
   // 7) montar en DOM
