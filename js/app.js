@@ -426,12 +426,20 @@ window.actualizarTotales = actualizarTotales;
     let clave = pageType;
     const url = new URL(window.location.href);
     const id = url.searchParams.get("id");
-    if (pageType === "producto" && id) clave = `producto_${id}`;
+
+    // Acepta "producto" (ES) o "product" (EN) y añade id si está
+    if ((pageType === "producto" || pageType === "product") && id) {
+      clave = `producto_${id}`;
+    }
 
     fetch(`${window.API_BASE}/visitas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clave })
-    }).catch(()=>{});
-  } catch (_) {}
+    })
+    .then(r => { if (!r.ok) console.warn('[visitas] respuesta no OK', r.status); })
+    .catch(err => console.warn('[visitas] error de red', err));
+  } catch (err) {
+    console.warn('[visitas] error inesperado', err);
+  }
 })();

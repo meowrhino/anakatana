@@ -454,31 +454,70 @@ app.get("/newsletter/:email", (req, res) => {
 });
 
 // POST /newsletter  body: {email}
-app.post("/newsletter", (req, res) => {
-  const email = String((req.body?.email || "")).trim().toLowerCase();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return res.status(400).json({ error: "email inválido" });
+app.post("/newsletter", async (req, res) => {
+  try {
+    const email = String((req.body?.email || "")).trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return res.status(400).json({ error: "email inválido" });
+    }
+
+    const data = leerNewsletter();
+    const yaEstaba = data.suscritos.includes(email);
+    if (!yaEstaba) {
+      data.suscritos.push(email);
+      try { guardarNewsletter(data); } catch (e) { console.error("Error guardando newsletter.json local:", e); }
+      // Subir a GitHub para reflejar en el repo
+      const body = JSON.stringify(data, null, 2);
+      try {
+        await upsertFileOnGitHub(
+          "data/newsletter.json",
+          body,
+          `chore: newsletter add ${email} (${new Date().toISOString()})`
+        );
+      } catch (e) {
+        console.error("GitHub upsert newsletter.json falló:", e.message || e);
+      }
+      return res.status(201).json({ ok: true, new: true, email, total: data.suscritos.length });
+    }
+
+    // Ya estaba
+    return res.status(409).json({ ok: true, new: false, email, total: data.suscritos.length });
+  } catch (err) {
+    console.error("/newsletter error:", err);
+    return res.status(500).json({ error: "internal" });
   }
-  const data = leerNewsletter();
-  if (!data.suscritos.includes(email)) {
-    data.suscritos.push(email);
-    guardarNewsletter(data);
-  }
-  return res.json({ ok: true, email, total: data.suscritos.length });
 });
 
 // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
 // POST /visitas  body: {clave: "home" | "producto_T02" | ...}
-app.post("/visitas", (req, res) => {
-  let clave = String(req.body?.clave || "").trim();
-  if (!clave) return res.status(400).json({ error: "clave requerida" });
-  clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
+app.post("/visitas", async (req, res) => {
+  try {
+    let clave = String(req.body?.clave || "").trim();
+    if (!clave) return res.status(400).json({ error: "clave requerida" });
+    clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
 
-  const v = leerVisitas();
-  v[clave] = (v[clave] || 0) + 1;
-  guardarVisitas(v);
+    const v = leerVisitas();
+    v[clave] = (v[clave] || 0) + 1;
+    try { guardarVisitas(v); } catch (e) { console.error("Error guardando visitas.json local:", e); }
 
-  return res.json({ ok: true, clave, total: v[clave] });
+    // Subir a GitHub para reflejar en el repo (cap opcional de tamaño si lo añades en el futuro)
+    const body = JSON.stringify(v, null, 2);
+    try {
+      await upsertFileOnGitHub(
+        "data/visitas.json",
+        body,
+        `chore: visitas ${clave} (+1) (${new Date().toISOString()})`
+      );
+    } catch (e) {
+      console.error("GitHub upsert visitas.json falló:", e.message || e);
+    }
+
+    // 204 No Content es suficiente para el front; si prefieres JSON, cambia a 200 con payload
+    return res.sendStatus(204);
+  } catch (err) {
+    console.error("/visitas error:", err);
+    return res.status(500).json({ error: "internal" });
+  }
 });
 
 // GET /visitas -> objeto completo (opcionalment se puede proteger)

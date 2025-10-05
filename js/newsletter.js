@@ -1,6 +1,8 @@
-const API_BASE = window.API_BASE || "https://YOUR-RENDER-APP.onrender.com";
 // newsletter.js — popup + API
 (function(){
+  if (!window.API_BASE) {
+    console.warn('[newsletter] window.API_BASE no está definido. Define window.API_BASE antes de cargar newsletter.js');
+  }
   let overlay;
 
   function openNewsletterPopup(prefill=""){
@@ -38,7 +40,7 @@ const API_BASE = window.API_BASE || "https://YOUR-RENDER-APP.onrender.com";
     const email = document.getElementById("nl-email").value.trim().toLowerCase();
     if (!email) return alert("Escribe un email");
     try {
-      const r = await fetch(`${API_BASE}/newsletter`, {
+      const r = await fetch(`${window.API_BASE}/newsletter`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ email })
@@ -59,7 +61,7 @@ const API_BASE = window.API_BASE || "https://YOUR-RENDER-APP.onrender.com";
       email = (email || localStorage.getItem("nl_email") || "").trim().toLowerCase();
       if (!email) return false;
       try {
-        const r = await fetch(`${API_BASE}/newsletter/${encodeURIComponent(email)}`);
+        const r = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`);
         const j = await r.json();
         return !!j.suscrito;
       } catch {
