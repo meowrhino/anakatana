@@ -7,6 +7,18 @@
 
   const FEE_RATE = window.FEE_RATE || 0.014;
 
+  const NL_RATE = 0.10; // 10% sobre subtotal de productos
+  function isNLEnabled() {
+    const emailEl = document.getElementById('email');
+    const chk = document.getElementById('nl-check');
+    const saved = (localStorage.getItem('nl_email') || '').trim().toLowerCase();
+    const email = (emailEl?.value || '').trim().toLowerCase();
+    return (chk && chk.checked) || (email && saved && saved === email);
+  }
+  function applyNL(subtotal) {
+    return isNLEnabled() ? Math.max(0, subtotal * (1 - NL_RATE)) : subtotal;
+  }
+
   function initCheckout() {
     // 1. Obtener carrito de localStorage
 
@@ -68,11 +80,11 @@
     // 3. Calcular y mostrar totales (sin comisión hasta seleccionar zona)
     const envioCoste = 0; // envío por defecto sin elegir zona
     document.getElementById("total-items").textContent = totalItems;
-    document.getElementById("subtotal").textContent = subtotal.toFixed(2) + "€";
+    const subtotalNL = applyNL(subtotal);
+    document.getElementById("subtotal").textContent = subtotalNL.toFixed(2) + "€";
     document.getElementById("envio").textContent = "n/a";
     document.getElementById("comision").textContent = "n/a"; // comisión en cero hasta selección
-    document.getElementById("total-pago").textContent =
-      subtotal.toFixed(2) + "€";
+    document.getElementById("total-pago").textContent = subtotalNL.toFixed(2) + "€";
 
     // 4. Manejar envío del formulario
     // Reemplaza sólo la sección del formulario (sección 4) en checkout.js por esto:
@@ -148,6 +160,23 @@
         const envioRaw = window.calcularEnvioCoste(pesoTotal, zona);
         const envioCoste = Number.isFinite(envioRaw) ? envioRaw : 0;
 
+        // Newsletter: aplicar 10% sobre subtotal si procede y suscribir si la casilla está activa
+        const nlChecked = !!document.getElementById('nl-check')?.checked;
+        const emailForNL = (form.elements["email"]?.value || "").trim().toLowerCase();
+        if (nlChecked && emailForNL) {
+          try {
+            await fetch(`${window.API_BASE}/newsletter`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: emailForNL })
+            });
+            localStorage.setItem('nl_email', emailForNL);
+          } catch (_) {
+            // silencioso
+          }
+        }
+        const subtotalConNL = isNLEnabled() ? subtotal * (1 - NL_RATE) : subtotal;
+
         try {
           const response = await fetch(
             `${window.API_BASE}/crear-sesion`,
@@ -159,7 +188,7 @@
                 envio: envioCoste,
                 // 1️⃣ Calculamos la comisión para cubrir la tarifa de Stripe
                 comision: (() => {
-                  const baseTotal = subtotal + envioCoste;
+                  const baseTotal = subtotalConNL + envioCoste;
                   const totalWithFee = baseTotal / (1 - FEE_RATE);
                   return totalWithFee * FEE_RATE;
                 })(),
@@ -178,7 +207,7 @@
             talla: item.talla || null,
           }));
           // Calcular precios
-          const subtotalProductos = subtotal;
+          const subtotalProductos = subtotalConNL;
           const precioEnvio = envioCoste;
           const baseTotal = subtotalProductos + precioEnvio;
           const totalConComision = baseTotal / (1 - FEE_RATE);
@@ -243,10 +272,11 @@
         document.getElementById("envio").textContent =
           envioCoste.toFixed(2) + "€";
 
-        const subtotal = carrito.reduce(
+        const subtotalRaw = carrito.reduce(
           (sum, item) => sum + item.precio * item.cantidad,
           0
         );
+        const subtotal = applyNL(subtotalRaw);
         const baseTotal = subtotal + envioCoste;
         const total = baseTotal / (1 - FEE_RATE);
         const comision = total * FEE_RATE;
@@ -261,7 +291,9 @@
   // Helper para recalcular totales al elegir zona (para dropdown)
   function actualizarTotalesCheckout(zona) {
     if (!zona) return;
-    const { subtotal, pesoTotal } = window.calcularSubtotales(carrito);
+    const st = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
+    const subtotal = applyNL(st);
+    const pesoTotal = carrito.reduce((s, it) => s + it.peso * it.cantidad, 0);
     const envioCoste = window.calcularEnvioCoste(pesoTotal, zona) || 0;
     const baseTotal = subtotal + envioCoste;
     const total = baseTotal / (1 - FEE_RATE);
@@ -348,5 +380,18 @@
       }
     });
   });
-})();
 
+  const nlCheck = document.getElementById('nl-check');
+  const emailEl = document.getElementById('email');
+  function recomputeTotalsLive(){
+    const zona = document.getElementById('zonaDropdown')?.dataset?.selected || '';
+    if (zona) actualizarTotalesCheckout(zona); else {
+      const st = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
+      const stNL = applyNL(st);
+      document.getElementById('subtotal').textContent = stNL.toFixed(2) + '€';
+      document.getElementById('total-pago').textContent = stNL.toFixed(2) + '€';
+    }
+  }
+  if (nlCheck) nlCheck.addEventListener('change', recomputeTotalsLive);
+  if (emailEl) emailEl.addEventListener('input', recomputeTotalsLive);
+})();

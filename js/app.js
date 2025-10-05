@@ -348,16 +348,34 @@ function abrirCarrito() {
     <p>Comisión: <strong id="res-comision">—</strong></p>
     <p>Total: <strong id="res-total">${subtotal.toFixed(2)}€</strong></p>
   `;
-  const resEnvio = resumen.querySelector("#res-envio");
-  const resComision = resumen.querySelector("#res-comision");
-  const resTotal = resumen.querySelector("#res-total");
+
+  // Bloque promo NL (10% descuento)
+  const promoNL = document.createElement("div");
+  promoNL.className = "carrito-nl";
+  promoNL.innerHTML = `
+    <div class="carrito-nl-box">
+      <p class="carrito-nl-text">¿Quieres <strong>10% de descuento</strong> en los productos? Suscríbete a la newsletter.</p>
+      <div class="carrito-nl-actions">
+        <button id="btn-open-nl" type="button" class="btn-nl">suscribirme</button>
+      </div>
+    </div>
+  `;
+  promoNL.querySelector('#btn-open-nl').addEventListener('click', () => {
+    if (window.NL && typeof window.NL.open === 'function') {
+      window.NL.open();
+    } else {
+      // fallback minimalista: abrir mailto si no está cargado el módulo NL
+      window.location.href = 'mailto:hifas@algo.com?subject=Newsletter';
+    }
+  });
+
   const btnPagar = document.createElement("button");
   btnPagar.className = "carrito-pagar";
   btnPagar.textContent = "IR AL PAGO";
   btnPagar.addEventListener("click", () => {
     window.location.href = "checkout.html";
   });
-  modal.append(resumen, btnPagar);
+  modal.append(resumen, promoNL, btnPagar);
 
   // 6) listener de cambio de zona
   selectZonaEl.addEventListener("change", (e) => {
