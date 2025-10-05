@@ -1,3 +1,10 @@
+// Config API (Render)
+window.API_BASE = "https://anakatana-backend.onrender.com";
+// Mini-guard: si por algún motivo no está definida, evita petar y avisa
+if (!window.API_BASE) {
+  console.warn("API_BASE no definido; usando fallback local (mismo origen)");
+  window.API_BASE = ""; // fallback relativo ("/visitas", "/newsletter"...)
+}
 // === 1. ESTADO DEL CARRITO ===
 // Cargar última zona seleccionada de localStorage
 let zonaSeleccionada = localStorage.getItem("zonaSeleccionada") || "";
@@ -415,3 +422,20 @@ function actualizarTotales() {
 
 // Exponerla globalmente
 window.actualizarTotales = actualizarTotales;
+
+// ─── Seguimiento de visitas (auto-hook por página) ───────────────────────────
+(function trackPageView(){
+  try {
+    const pageType = document.body.dataset.pageType || "home";
+    let clave = pageType;
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("id");
+    if (pageType === "producto" && id) clave = `producto_${id}`;
+
+    fetch(`${window.API_BASE}/visitas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave })
+    }).catch(()=>{});
+  } catch (_) {}
+})();

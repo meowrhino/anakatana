@@ -150,7 +150,7 @@
 
         try {
           const response = await fetch(
-            "https://anakatana-backend.onrender.com/crear-sesion",
+            `${window.API_BASE}/crear-sesion`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },

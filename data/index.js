@@ -131,6 +131,21 @@ const leerProductos = () => JSON.parse(fs.readFileSync(dbPath, "utf-8"));
 const guardarProductos = (productos) =>
   fs.writeFileSync(dbPath, JSON.stringify(productos, null, 2), "utf-8");
 
+// ─── Newsletter & Visitas (paths y helpers) ───────────────────────────────────
+const newsletterPath = path.join(__dirname, "newsletter.json");
+const visitasPath = path.join(__dirname, "visitas.json");
+
+function leerJSONSeguro(p, fallback) {
+  try { return JSON.parse(fs.readFileSync(p, "utf-8")); }
+  catch { fs.writeFileSync(p, JSON.stringify(fallback, null, 2), "utf-8"); return fallback; }
+}
+
+const leerNewsletter = () => leerJSONSeguro(newsletterPath, { suscritos: [] });
+const guardarNewsletter = (obj) => fs.writeFileSync(newsletterPath, JSON.stringify(obj, null, 2), "utf-8");
+
+const leerVisitas = () => leerJSONSeguro(visitasPath, {});
+const guardarVisitas = (obj) => fs.writeFileSync(visitasPath, JSON.stringify(obj, null, 2), "utf-8");
+
 // ───────────────────────────────────────────────────────────────────────────────
 // 4) RUTAS DE CATÁLOGO Y STOCK
 // ───────────────────────────────────────────────────────────────────────────────
@@ -427,6 +442,48 @@ app.get("/historial", (_req, res) => {
     console.error("Error leyendo historial:", err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ─── NEWSLETTER ───────────────────────────────────────────────────────────────
+// GET /newsletter/:email  -> {suscrito: true/false}
+app.get("/newsletter/:email", (req, res) => {
+  const email = String(req.params.email || "").trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: "email requerido" });
+  const { suscritos } = leerNewsletter();
+  return res.json({ suscrito: suscritos.includes(email) });
+});
+
+// POST /newsletter  body: {email}
+app.post("/newsletter", (req, res) => {
+  const email = String((req.body?.email || "")).trim().toLowerCase();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(400).json({ error: "email inválido" });
+  }
+  const data = leerNewsletter();
+  if (!data.suscritos.includes(email)) {
+    data.suscritos.push(email);
+    guardarNewsletter(data);
+  }
+  return res.json({ ok: true, email, total: data.suscritos.length });
+});
+
+// ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+// POST /visitas  body: {clave: "home" | "producto_T02" | ...}
+app.post("/visitas", (req, res) => {
+  let clave = String(req.body?.clave || "").trim();
+  if (!clave) return res.status(400).json({ error: "clave requerida" });
+  clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
+
+  const v = leerVisitas();
+  v[clave] = (v[clave] || 0) + 1;
+  guardarVisitas(v);
+
+  return res.json({ ok: true, clave, total: v[clave] });
+});
+
+// GET /visitas -> objeto completo (opcionalment se puede proteger)
+app.get("/visitas", (_req, res) => {
+  res.json(leerVisitas());
 });
 
 // ───────────────────────────────────────────────────────────────────────────────

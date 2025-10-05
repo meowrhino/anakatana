@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Enviar los datos al backend
   console.log('➡️ Enviando al servidor:', cartRecord);
-  fetch('https://anakatana-backend.onrender.com/guardar-carrito', {
+  fetch(`${window.API_BASE}/guardar-carrito`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cartRecord)
