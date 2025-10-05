@@ -719,8 +719,10 @@ body[data-page-type="about"] {
   text-align: right;
 }
 .carrito-pagar {
-  display: block;
-  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0;
   margin-top: 1.5rem;
   padding: 0.6rem 1.2rem;
   text-transform: uppercase;
@@ -735,6 +737,50 @@ body[data-page-type="about"] {
 .carrito-pagar:hover {
   background: #fff;
   color: #000;
+}
+
+/* NL en carrito: fila input + acciones */
+.carrito-nl { margin-top: 0.5rem; }
+.carrito-nl-text { margin-bottom: 0.5rem; font-family: "IBM Plex Sans", sans-serif; }
+.carrito-nl-row { display: flex; gap: .5rem; align-items: center; }
+.nl-input { flex: 1; min-width: 0; padding: .45rem .6rem; background: transparent; color: #fff; border: 1px solid var(--grisAnaKtana); font: inherit; }
+
+.carrito-actions { display: flex; gap: .75rem; justify-content: flex-end; align-items: center; margin-top: 1rem; }
+.btn-nl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0;
+  margin-top: 1.5rem;
+  padding: 0.6rem 1.2rem;
+  text-transform: uppercase;
+  font-family: "Noto Serif JP", serif;
+  font-size: 1rem;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: all .3s ease;
+}
+.btn-nl:hover { background: #fff; color: #000; }
+.btn-nl.is-disabled { opacity: .4; cursor: default; border-color: #777; color: #777; }
+.btn-nl.is-disabled:hover { background: transparent; color: #777; }
+
+/* Alineación y tamaño homogéneo de los botones de acciones en carrito */
+.carrito-actions {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1rem;
+}
+.carrito-actions .btn-nl,
+.carrito-actions .carrito-pagar {
+  min-width: 11rem;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =========================================================

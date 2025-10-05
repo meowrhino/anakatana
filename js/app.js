@@ -339,33 +339,30 @@ function abrirCarrito() {
     }
   });
 
-  // 5) texto de totales + botón pago
-  const resumen = document.createElement("div");
-  resumen.className = "carrito-total";
-  resumen.innerHTML = `
-    <p>Artículos en carrito: <strong id="res-items">${carrito.reduce((s, it) => s + it.cantidad, 0)}</strong></p>
-    <p class="carrito-nota">El importe final se calcula en el <em>checkout</em>.</p>
-  `;
+  // 5) texto de totales + botón pago (eliminado resumen)
 
-  // Bloque promo NL (10% descuento)
+  // Bloque promo NL (10% descuento) + input email
   const promoNL = document.createElement("div");
   promoNL.className = "carrito-nl";
+  const savedNL = (localStorage.getItem('nl_email') || '').trim().toLowerCase();
   promoNL.innerHTML = `
     <div class="carrito-nl-box">
       <p class="carrito-nl-text">¿Quieres <strong>10% de descuento</strong> en los productos? Suscríbete a la newsletter.</p>
-      <div class="carrito-nl-actions">
-        <button id="btn-open-nl" type="button" class="btn-nl">suscribirme</button>
+      <div class="carrito-nl-row">
+        <input id="nl-input-carrito" class="nl-input" type="email" placeholder="tu@email" value="${savedNL}">
       </div>
     </div>
   `;
-  promoNL.querySelector('#btn-open-nl').addEventListener('click', () => {
-    if (window.NL && typeof window.NL.open === 'function') {
-      window.NL.open();
-    } else {
-      // fallback minimalista: abrir mailto si no está cargado el módulo NL
-      window.location.href = 'mailto:hifas@algo.com?subject=Newsletter';
-    }
-  });
+
+  // Botones de acción alineados: SUSCRIBIRME (izq) + IR AL PAGO (dcha)
+  const actions = document.createElement('div');
+  actions.className = 'carrito-actions';
+
+  const btnNL = document.createElement('button');
+  btnNL.id = 'btn-nl-suscribir';
+  btnNL.type = 'button';
+  btnNL.className = 'btn-nl';
+  btnNL.textContent = 'suscribirme';
 
   const btnPagar = document.createElement("button");
   btnPagar.className = "carrito-pagar";
@@ -373,7 +370,64 @@ function abrirCarrito() {
   btnPagar.addEventListener("click", () => {
     window.location.href = "checkout.html";
   });
-  modal.append(resumen, promoNL, btnPagar);
+
+  actions.append(btnNL, btnPagar);
+
+  // Lógica de suscripción desde el carrito (con pre-chequeo)
+  const nlInput = promoNL.querySelector('#nl-input-carrito');
+  function updateNLState(){
+    const hasMail = (nlInput.value || '').trim().toLowerCase().length > 3;
+    btnNL.classList.toggle('is-disabled', !hasMail);
+    btnNL.disabled = !hasMail;
+  }
+  updateNLState();
+  nlInput.addEventListener('input', updateNLState);
+
+  async function markAsSubscribed(email){
+    btnNL.textContent = 'ya suscrita';
+    btnNL.classList.add('is-disabled');
+    btnNL.disabled = true;
+    localStorage.setItem('nl_email', email);
+  }
+
+  // si ya hay un email guardado, comprobar en el back (async IIFE)
+  if ((savedNL || '').length > 3) {
+    (async () => {
+      try {
+        const chk = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(savedNL)}`).then(r=>r.json());
+        if (chk && chk.suscrito) await markAsSubscribed(savedNL);
+      } catch (_) {}
+    })();
+  }
+
+  btnNL.addEventListener('click', async () => {
+    const email = (nlInput.value || '').trim().toLowerCase();
+    if (!email) return;
+
+    // Pre-chequeo en backend para evitar duplicados
+    try {
+      const chk = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`).then(r=>r.json());
+      if (chk && chk.suscrito) return markAsSubscribed(email);
+    } catch (_) {}
+
+    try {
+      const r = await fetch(`${window.API_BASE}/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'error');
+      // feedback mínimo
+      btnNL.textContent = '¡suscrita!';
+      await new Promise(res=>setTimeout(res, 1000));
+      await markAsSubscribed(email);
+    } catch (e) {
+      console.warn('No se pudo suscribir ahora');
+    }
+  });
+
+  modal.append(promoNL, actions);
 
   // 6) listener de cambio de zona
   selectZonaEl.addEventListener("change", (e) => {

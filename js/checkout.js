@@ -383,6 +383,22 @@
 
   const nlCheck = document.getElementById('nl-check');
   const emailEl = document.getElementById('email');
+  // Auto-check NL si el email ya está suscrito en backend
+  if (emailEl) {
+    emailEl.addEventListener('blur', async () => {
+      const em = (emailEl.value || '').trim().toLowerCase();
+      if (!em) return;
+      try {
+        const r = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(em)}`);
+        const j = await r.json();
+        if (j && j.suscrito) {
+          localStorage.setItem('nl_email', em);
+          if (nlCheck) nlCheck.checked = true;
+          recomputeTotalsLive();
+        }
+      } catch (_) {}
+    });
+  }
   function recomputeTotalsLive(){
     const zona = document.getElementById('zonaDropdown')?.dataset?.selected || '';
     if (zona) actualizarTotalesCheckout(zona); else {
