@@ -288,58 +288,7 @@ function abrirCarrito() {
   });
   modal.appendChild(lista);
 
-  // 4) sección envío
-  const envioWrapper = document.createElement("div");
-  envioWrapper.className = "carrito-envio";
-  envioWrapper.innerHTML = `
-    <label for="envio-zona">Estimar envío</label>
-    <select id="envio-zona">
-      <option value="">elige zona</option>
-    </select>
-    <p id="envio-estimado"></p>
-  `;
-  modal.appendChild(envioWrapper);
-
-  // Poblar zonas desde envios.json (vía cargarTarifasEnvio)
-  const selectZonaEl = envioWrapper.querySelector("#envio-zona");
-  cargarTarifasEnvio(true).then(() => {
-    // Asegurar estructura y entrega en mano (0€) por si no viniera
-    if (!TARIFAS_ENVIO) TARIFAS_ENVIO = {};
-    if (
-      !Object.prototype.hasOwnProperty.call(TARIFAS_ENVIO, "entrega_mano_bcn")
-    ) {
-      TARIFAS_ENVIO.entrega_mano_bcn = { pequeno: 0, mediano: 0, grande: 0 };
-    }
-
-    // Limpiar y poblar opciones
-    selectZonaEl.innerHTML = `<option value="">elige zona</option>`;
-    const zonas = Object.keys(TARIFAS_ENVIO).sort((a, b) =>
-      a === "entrega_mano_bcn"
-        ? -1
-        : b === "entrega_mano_bcn"
-        ? 1
-        : a.localeCompare(b)
-    );
-
-    zonas.forEach((z) => {
-      const opt = document.createElement("option");
-      opt.value = z;
-      const nice = (LABELS_ZONA && LABELS_ZONA[z]) || z.replace(/_/g, " ");
-      opt.textContent = nice;
-      selectZonaEl.appendChild(opt);
-    });
-
-    // Restaurar selección previa si existe (y calcular ya)
-    if (
-      zonaSeleccionada &&
-      selectZonaEl.querySelector(`option[value="${zonaSeleccionada}"]`)
-    ) {
-      selectZonaEl.value = zonaSeleccionada;
-      selectZonaEl.dispatchEvent(new Event("change"));
-    }
-  });
-
-  // 5) texto de totales + botón pago (eliminado resumen)
+  // 4) Suscripción NL + acciones
 
   // Bloque promo NL (10% descuento) + input email
   const promoNL = document.createElement("div");
@@ -429,12 +378,6 @@ function abrirCarrito() {
 
   modal.append(promoNL, actions);
 
-  // 6) listener de cambio de zona
-  selectZonaEl.addEventListener("change", (e) => {
-    zonaSeleccionada = e.target.value;
-    localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
-    // Sin cálculo económico en carrito: se mostrará en checkout.
-  });
 
   // 7) montar en DOM
   overlay.appendChild(modal);

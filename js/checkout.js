@@ -87,8 +87,6 @@
     document.getElementById("total-pago").textContent = subtotalNL.toFixed(2) + "€";
 
     // 4. Manejar envío del formulario
-    // Reemplaza sólo la sección del formulario (sección 4) en checkout.js por esto:
-
     const stripe = Stripe(
       "pk_live_51Ls6nCLPcSoTiWwr0uMBdMDIRslS0tE6s09Rm4LOMc5UZwU1FexkUIuHfogQcVJCTcyIjZxKKtVsY4SHZE0Zykk500bPU7IDAd"
     ); // ← Cambia aquí tu clave pública
@@ -135,13 +133,6 @@
           return;
         }
 
-        // Preparar datos reales del carrito...
-        const carritoStripe = carrito.map((item) => ({
-          nombre: item.nombre,
-          precio: item.precio,
-          cantidad: item.cantidad,
-        }));
-
         // Recalcula subtotal y envío
         subtotal = carrito.reduce(
           (sum, item) => sum + item.precio * item.cantidad,
@@ -176,6 +167,14 @@
           }
         }
         const subtotalConNL = isNLEnabled() ? subtotal * (1 - NL_RATE) : subtotal;
+
+        // Preparar datos del carrito para Stripe con precio unitario ya ajustado si NL aplica
+        const discountFactor = isNLEnabled() ? (1 - NL_RATE) : 1;
+        const carritoStripe = carrito.map((item) => ({
+          nombre: item.nombre,
+          precio: Number((item.precio * discountFactor).toFixed(2)),
+          cantidad: item.cantidad,
+        }));
 
         try {
           const response = await fetch(
@@ -252,40 +251,6 @@
       console.warn("No se encontró el formulario de checkout.");
     }
 
-    const zonaSelect = document.getElementById("zona-envio");
-    if (zonaSelect) {
-      zonaSelect.addEventListener("change", () => {
-        const zona = zonaSelect.value;
-        if (!zona) return;
-
-        // Calcular peso total
-        const pesoTotal = carrito.reduce(
-          (sum, item) => sum + item.peso * item.cantidad,
-          0
-        );
-
-        // Calcular nuevo coste de envío
-        const envioRaw = window.calcularEnvioCoste(pesoTotal, zona);
-        const envioCoste = Number.isFinite(envioRaw) ? envioRaw : 0;
-
-        // Actualizar DOM
-        document.getElementById("envio").textContent =
-          envioCoste.toFixed(2) + "€";
-
-        const subtotalRaw = carrito.reduce(
-          (sum, item) => sum + item.precio * item.cantidad,
-          0
-        );
-        const subtotal = applyNL(subtotalRaw);
-        const baseTotal = subtotal + envioCoste;
-        const total = baseTotal / (1 - FEE_RATE);
-        const comision = total * FEE_RATE;
-        document.getElementById("comision").textContent =
-          comision.toFixed(2) + "€";
-        document.getElementById("total-pago").textContent =
-          total.toFixed(2) + "€";
-      });
-    }
   }
 
   // Helper para recalcular totales al elegir zona (para dropdown)
