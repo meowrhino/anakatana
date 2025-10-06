@@ -2,6 +2,12 @@
   {
     "id": 1,
     "img": "img/aphex_1.jpeg",
+    "galeria": [
+      "img/aphex_1.jpeg",
+      "img/aphex_2.JPG",
+      "img/aphex_3.JPG",
+      "img/aphex_4.JPG"
+    ],
     "titulo": "I LISTEN TO APHEX TWIN DURING SEX",
     "precio": "35,00",
     "descripcion_corta": "tank top algodón y elastano impreso en DTF",
@@ -12,22 +18,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "30cm width x 65cm length"
-      },
-      {
-        "id": 2,
-        "descripcion": "34cm width x 67cm length"
-      },
-      {
-        "id": 3,
-        "descripcion": "38cm width x 69cm length"
-      },
-      {
-        "id": 4,
-        "descripcion": "42cm width x 71cm length"
-      }
+      { "id": 1, "descripcion": "30cm width x 65cm length" },
+      { "id": 2, "descripcion": "34cm width x 67cm length" },
+      { "id": 3, "descripcion": "38cm width x 69cm length" },
+      { "id": 4, "descripcion": "42cm width x 71cm length" }
     ],
     "tallaModelo": 1,
     "rebajas": "si",
@@ -38,6 +32,14 @@
   {
     "id": 2,
     "img": "img/T02_1.png",
+    "galeria": [
+      "img/T02_1.png",
+      "img/T021.jpg",
+      "img/T022.jpg",
+      "img/T023.jpg",
+      "img/T024.jpeg",
+      "img/T025.jpeg"
+    ],
     "titulo": "T02 PANTS",
     "precio": "85,00",
     "descripcion_corta": "Knitted fabric leftovers from factories in Vigo, Spain.",
@@ -48,18 +50,9 @@
     ],
     "colección": "BACKROOMS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "80cm waist x 67cm length"
-      },
-      {
-        "id": 2,
-        "descripcion": "90cm waist x 68cm length"
-      },
-      {
-        "id": 3,
-        "descripcion": "100cm waist x 69 cm length"
-      }
+      { "id": 1, "descripcion": "80cm waist x 67cm length" },
+      { "id": 2, "descripcion": "90cm waist x 68cm length" },
+      { "id": 3, "descripcion": "100cm waist x 69 cm length" }
     ],
     "tallaModelo": 1,
     "rebajas": "si",
@@ -70,6 +63,13 @@
   {
     "id": 3,
     "img": "img/pumpum_1.jpeg",
+    "galeria": [
+      "img/pumpum_1.jpeg",
+      "img/PUMPUM1.jpeg",
+      "img/PUMPUM2.png",
+      "img/PUMPUM3.jpg",
+      "img/PUMPUM4.jpg"
+    ],
     "titulo": "PUM PUM T-SHIRT",
     "precio": "35,00",
     "descripcion_corta": "The one and only the last chance bby life goes fast af",
@@ -80,30 +80,12 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "40cm width x 47cm length"
-      },
-      {
-        "id": 2,
-        "descripcion": "42cm width x 49cm length"
-      },
-      {
-        "id": 3,
-        "descripcion": "44cm width x 51cm length"
-      },
-      {
-        "id": 4,
-        "descripcion": "51cm width x 70cm length"
-      },
-      {
-        "id": 5,
-        "descripcion": "54cm width x 73cm length"
-      },
-      {
-        "id": 6,
-        "descripcion": "56cm width x 74cm length"
-      }
+      { "id": 1, "descripcion": "40cm width x 47cm length" },
+      { "id": 2, "descripcion": "42cm width x 49cm length" },
+      { "id": 3, "descripcion": "44cm width x 51cm length" },
+      { "id": 4, "descripcion": "51cm width x 70cm length" },
+      { "id": 5, "descripcion": "54cm width x 73cm length" },
+      { "id": 6, "descripcion": "56cm width x 74cm length" }
     ],
     "tallaModelo": 4,
     "rebajas": "si",
@@ -114,6 +96,11 @@
   {
     "id": 4,
     "img": "img/neck_1.jpeg",
+    "galeria": [
+      "img/neck_1.jpeg",
+      "img/necklace1.jpeg",
+      "img/necklace2.jpeg"
+    ],
     "titulo": "neck-lace",
     "precio": "25,00",
     "descripcion_corta": "Collar de tul proveniente de retales de segunda mano Berlín, Alemania.",
@@ -124,10 +111,7 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "one-size"
-      }
+      { "id": 1, "descripcion": "one-size" }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -138,6 +122,12 @@
   {
     "id": 5,
     "img": "img/T01_1.jpeg",
+    "galeria": [
+      "img/T01_1.jpeg",
+      "img/t01pants1.jpeg",
+      "img/t01pants2.jpg",
+      "img/t01pants3.jpg"
+    ],
     "titulo": "T01 PANTS",
     "precio": "95,00",
     "descripcion_corta": "Algodón y elastano en punto roma. Igualada, Barcelona.",
@@ -148,10 +138,7 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "custom (send mail)"
-      }
+      { "id": 1, "descripcion": "custom (send mail)" }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -162,6 +149,11 @@
   {
     "id": 6,
     "img": "img/360_1.JPG",
+    "galeria": [
+      "img/360_1.JPG",
+      "img/3601.JPG",
+      "img/3602.jpg"
+    ],
     "titulo": "360",
     "precio": "36,00",
     "descripcion_corta": "(3,60 metres scarf) hand-knitted, available in black and also in white",
@@ -172,10 +164,7 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "one-size"
-      }
+      { "id": 1, "descripcion": "one-size" }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -186,6 +175,11 @@
   {
     "id": 7,
     "img": "img/balaklava_1.jpeg",
+    "galeria": [
+      "img/balaklava_1.jpeg",
+      "img/balaklava1.jpeg",
+      "img/balaklava2.jpeg"
+    ],
     "titulo": "BALAKLAVA",
     "precio": "60,00",
     "descripcion_corta": "hand-knitted wool balaclava inspired by medieval chain mail",
@@ -196,10 +190,7 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "one-size"
-      }
+      { "id": 1, "descripcion": "one-size" }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -220,16 +211,12 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      {
-        "id": 1,
-        "descripcion": "one-size"
-      }
+      { "id": 1, "descripcion": "one-size" }
     ],
-    "tallaModelo": "1",
+    "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
     "stock": 5,
-    "soldOut": "no",
-    "galeria": ["img/UjLcjUoUE0.webp", "img/360_1.JPG", "img/T01_1.jpeg"] 
+    "soldOut": "no"
   }
 ]
