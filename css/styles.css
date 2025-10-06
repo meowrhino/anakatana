@@ -719,10 +719,10 @@ body[data-page-type="about"] {
   text-align: right;
 }
 .carrito-pagar {
-  display: inline-flex;
+  display: block;           /* block + auto => se va a la derecha sin depender del padre */
   align-items: center;
   justify-content: center;
-  margin-left: 0;
+  margin-left: auto;        /* empuja a la derecha */
   margin-top: 1.5rem;
   padding: 0.6rem 1.2rem;
   text-transform: uppercase;
