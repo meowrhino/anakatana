@@ -77,7 +77,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // habilita preflight
+app.options(/.*/, cors(corsOptions)); // habilita preflight en cualquier ruta (Express 5 compatible)
 
 /** === Admin auth (token simple) === */
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
