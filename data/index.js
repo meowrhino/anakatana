@@ -33,6 +33,52 @@ const FRONTEND_URL =
 // ───────────────────────────────────────────────────────────────────────────────
 const app = express();
 
+/** CORS con allowlist por ENV + soporte comodines (*.dominio)
+ *  Render -> Environment:
+ *    CORS_ORIGINS="http://localhost:5500, http://127.0.0.1:5500, https://meowrhino.github.io"
+ *  Puedes añadir más separados por coma.
+ */
+function buildOriginMatcher(list) {
+  const exact = new Set();
+  const suffixes = [];
+  for (const raw of list) {
+    const o = String(raw || "").trim();
+    if (!o) continue;
+    if (o.startsWith("*.")) suffixes.push(o.slice(1));   // '*.github.io' -> '.github.io'
+    else exact.add(o);
+  }
+  return (origin) => {
+    if (!origin) return true; // healthchecks, curl
+    if (exact.has(origin)) return true;
+    return suffixes.some(suf => origin.endsWith(suf));
+  };
+}
+
+const DEFAULT_ORIGINS = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://meowrhino.github.io",
+];
+const ORIGINS = (process.env.CORS_ORIGINS || DEFAULT_ORIGINS.join(","))
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+const isAllowed = buildOriginMatcher(ORIGINS);
+
+const corsOptions = {
+  origin(origin, cb) {
+    if (isAllowed(origin)) return cb(null, true);
+    cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // habilita preflight
+
 /** === Admin auth (token simple) === */
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 function adminAuth(req, res, next) {
@@ -42,26 +88,6 @@ function adminAuth(req, res, next) {
   return res.status(401).json({ error: "unauthorized" });
 }
 
-/**
- * CORS: permitimos orígenes de desarrollo y el dominio público de producción.
- *  - Si cambias dónde sirves el front, añade su URL en ALLOWED_ORIGINS.
- */
-const ALLOWED_ORIGINS = [
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "https://meowrhino.github.io",
-];
-app.use(
-  cors({
-    origin(origin, cb) {
-      // Permite peticiones sin origin (curl, healthchecks) o listadas
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
 
 // Body parser JSON
 app.use(express.json());
@@ -537,36 +563,74 @@ app.listen(PORT, () => {
   console.log(`Servidor Express corriendo en puerto ${PORT}`);
 });
 
-/** Subir/actualizar archivo en GitHub (ruta dentro del repo) */
-async function upsertFileOnGitHub(pathInRepo, contentString, message) {
-  if (!process.env.GITHUB_TOKEN) return null;
+
+/** ────────────────────────────────────────────────────────────────────────────
+ * Subir/actualizar archivo en GitHub (seguro frente a carreras)
+ *  - Mutex por ruta (serializa PUTs concurrentes sobre el mismo path)
+ *  - Reintentos con backoff en caso de 409 (sha desactualizado)
+ *  - Lee siempre el SHA actual antes de cada intento
+ * Env: GITHUB_TOKEN requerido
+ * ─────────────────────────────────────────────────────────────────────────── */
+const _ghLocks = new Map(); // pathInRepo -> Promise chain
+
+async function _withPathLock(pathInRepo, fn) {
+  const prev = _ghLocks.get(pathInRepo) || Promise.resolve();
+  let resolveNext;
+  const next = new Promise((r) => (resolveNext = r));
+  _ghLocks.set(pathInRepo, prev.then(() => next).catch(() => next));
   try {
-    const gh = new Octokit({ auth: process.env.GITHUB_TOKEN });
-    const owner = "meowrhino";
-    const repo = "anakatana";
-    // get SHA if exists
-    let sha;
-    try {
-      const { data: current } = await gh.repos.getContent({
-        owner,
-        repo,
-        path: pathInRepo,
-      });
-      if (!Array.isArray(current)) sha = current.sha;
-    } catch (_) {}
-    const result = await gh.repos.createOrUpdateFileContents({
-      owner,
-      repo,
-      path: pathInRepo,
-      message,
-      content: Buffer.from(contentString).toString("base64"),
-      sha,
-    });
+    const result = await fn();
+    resolveNext();
     return result;
   } catch (e) {
-    console.error("GitHub upsert error:", e.message);
-    return null;
+    resolveNext();
+    throw e;
+  } finally {
+    if (_ghLocks.get(pathInRepo) === next) _ghLocks.delete(pathInRepo);
   }
+}
+
+async function upsertFileOnGitHub(pathInRepo, contentString, message) {
+  if (!process.env.GITHUB_TOKEN) return null;
+  const owner = "meowrhino";
+  const repo = "anakatana";
+  const gh = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+  return _withPathLock(pathInRepo, async () => {
+    const contentB64 = Buffer.from(contentString).toString("base64");
+
+    // hasta 3 intentos con backoff 150/350/900 ms
+    const delays = [150, 350, 900];
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+      // 1) obtener SHA actual (si existe)
+      let sha;
+      try {
+        const { data: current } = await gh.repos.getContent({ owner, repo, path: pathInRepo });
+        if (!Array.isArray(current)) sha = current.sha;
+      } catch (e) {
+        if (e.status !== 404) throw e; // 404 -> crear
+      }
+
+      try {
+        const resp = await gh.repos.createOrUpdateFileContents({
+          owner, repo, path: pathInRepo,
+          message: message || `chore: update ${pathInRepo} (${new Date().toISOString()})`,
+          content: contentB64,
+          sha, // undefined -> create; definido -> update
+        });
+        return resp;
+      } catch (e) {
+        const status = e.status || e.response?.status;
+        const msg = e.message || e.response?.data?.message || String(e);
+        if (status === 409 && attempt < delays.length - 1) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+          continue;
+        }
+        console.error("GitHub upsert error:", msg);
+        throw e;
+      }
+    }
+  });
 }
 
 /** Admin: actualizar stock en lote
