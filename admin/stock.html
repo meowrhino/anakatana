@@ -139,6 +139,22 @@
     justify-content: center;
     margin-top: 6px;
   }
+
+  /* portada vs galería */
+  .ph.is-cover { position: relative; border-color: #6cf; }
+  .ph.is-cover::before {
+    content: "PORTADA (home)";
+    position: absolute; top: -10px; left: 8px;
+    background: #6cf; color: #000; font-weight: 700;
+    padding: 2px 6px; border-radius: 8px; font-size: 12px;
+  }
+  .ph.is-gallery { position: relative; }
+  .ph.is-gallery::before {
+    content: "galería";
+    position: absolute; top: -10px; left: 8px;
+    background: #999; color: #000; padding: 2px 6px;
+    border-radius: 8px; font-size: 12px;
+  }
 </style>
 <section class="wrap">
   <h1>Gestor de stock</h1>
@@ -173,10 +189,12 @@
   <div class="photo-card">
     <h2 style="margin:0 0 8px 0">Editar fotos</h2>
     <div class="grid" id="phGrid"></div>
+    <!--
     <div class="row" style="margin-top:10px">
-      <input id="newPhotoUrl" placeholder="Pegar URL de imagen…" style="flex:1" />
+      <input id="newPhotoUrl" placeholder="Pegar URL completa o ruta relativa (p. ej. img/foto.jpg)" style="flex:1" />
       <button class="btn" id="addPhoto">Añadir</button>
     </div>
+    -->
     <div class="row" style="margin-top:10px; justify-content:flex-end">
       <button class="btn" id="phCancel">Cancelar</button>
       <button class="btn" id="phSave">Guardar</button>
@@ -370,13 +388,16 @@
     const p = productos.find(x => x.id === id);
     const imgs = [p.img, ...(Array.isArray(p.galeria) ? p.galeria : [])].filter(Boolean);
     const grid = document.getElementById('phGrid');
-    grid.innerHTML = imgs.map((src, i) => `
-    <div class="ph" data-i="${i}">
+
+    const help = ``;
+
+    grid.innerHTML = help + imgs.map((src, i) => `
+    <div class="ph ${i===0 ? 'is-cover' : 'is-gallery'}" data-i="${i}" data-src="${src}">
       <img src="${resolveImg(src)}" alt="foto ${i + 1}"/>
       <div class="ph-actions">
         <button class="btn ph-up" data-i="${i}">↑</button>
         <button class="btn ph-down" data-i="${i}">↓</button>
-        <button class="btn ph-del" data-i="${i}">Eliminar</button>
+        <button class="btn ph-del" data-i="${i}" aria-label="Eliminar" title="Eliminar">🗑️</button>
       </div>
     </div>`).join('');
     document.getElementById('photoModal').classList.remove('hidden');
@@ -385,12 +406,11 @@
     grid.querySelectorAll('.ph-down').forEach(bt => bt.onclick = () => movePhoto(Number(bt.dataset.i), 1));
     grid.querySelectorAll('.ph-del').forEach(bt => bt.onclick = () => removePhoto(Number(bt.dataset.i)));
   }
-  function refreshGrid() {
-    openPhotoEditor(currentPhotoId);
-  }
   function photosArray() {
     const grid = document.getElementById('phGrid');
-    return Array.from(grid.querySelectorAll('img')).map(img => img.src);
+    return Array.from(grid.querySelectorAll('.ph'))
+      .filter(node => node.hasAttribute('data-src'))
+      .map(node => node.getAttribute('data-src'));
   }
   function setPhotosToProduct() {
     const p = productos.find(x => x.id === currentPhotoId);
@@ -406,15 +426,16 @@
     if (j < 0 || j >= arr.length) return;
     [arr[i], arr[j]] = [arr[j], arr[i]];
     const grid = document.getElementById('phGrid');
+    // omite el párrafo de ayuda ya que no cambia
     grid.innerHTML = arr.map((src, k) => `
-    <div class="ph" data-i="${k}">
-      <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
-      <div class="ph-actions">
-        <button class="btn ph-up" data-i="${k}">↑</button>
-        <button class="btn ph-down" data-i="${k}">↓</button>
-        <button class="btn ph-del" data-i="${k}">Eliminar</button>
-      </div>
-    </div>`).join('');
+      <div class="ph ${k===0 ? 'is-cover' : 'is-gallery'}" data-i="${k}" data-src="${src}">
+        <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
+        <div class="ph-actions">
+          <button class="btn ph-up" data-i="${k}">↑</button>
+          <button class="btn ph-down" data-i="${k}">↓</button>
+          <button class="btn ph-del" data-i="${k}" aria-label="Eliminar" title="Eliminar">🗑️</button>
+        </div>
+      </div>`).join('');
     grid.querySelectorAll('.ph-up').forEach(bt => bt.onclick = () => movePhoto(Number(bt.dataset.i), -1));
     grid.querySelectorAll('.ph-down').forEach(bt => bt.onclick = () => movePhoto(Number(bt.dataset.i), 1));
     grid.querySelectorAll('.ph-del').forEach(bt => bt.onclick = () => removePhoto(Number(bt.dataset.i)));
@@ -424,31 +445,39 @@
     arr.splice(i, 1);
     const grid = document.getElementById('phGrid');
     grid.innerHTML = arr.map((src, k) => `
-    <div class="ph" data-i="${k}">
-      <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
-      <div class="ph-actions">
-        <button class="btn ph-up" data-i="${k}">↑</button>
-        <button class="btn ph-down" data-i="${k}">↓</button>
-        <button class="btn ph-del" data-i="${k}">Eliminar</button>
-      </div>
-    </div>`).join('');
+      <div class="ph ${k===0 ? 'is-cover' : 'is-gallery'}" data-i="${k}" data-src="${src}">
+        <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
+        <div class="ph-actions">
+          <button class="btn ph-up" data-i="${k}">↑</button>
+          <button class="btn ph-down" data-i="${k}">↓</button>
+          <button class="btn ph-del" data-i="${k}" aria-label="Eliminar" title="Eliminar">🗑️</button>
+        </div>
+      </div>`).join('');
     grid.querySelectorAll('.ph-up').forEach(bt => bt.onclick = () => movePhoto(Number(bt.dataset.i), -1));
     grid.querySelectorAll('.ph-down').forEach(bt => bt.onclick = () => movePhoto(Number(bt.dataset.i), 1));
     grid.querySelectorAll('.ph-del').forEach(bt => bt.onclick = () => removePhoto(Number(bt.dataset.i)));
   }
-  document.getElementById('addPhoto').onclick = () => {
+  const _addBtn = document.getElementById('addPhoto');
+  if (_addBtn) _addBtn.onclick = () => {
     const url = (document.getElementById('newPhotoUrl').value || '').trim();
     if (!url) return;
     const grid = document.getElementById('phGrid');
+    const nodes = Array.from(grid.querySelectorAll('.ph'));
+    const i = nodes.length; // nuevo índice
     const node = document.createElement('div');
-    node.className = 'ph';
-    node.innerHTML = `<img src="${url}"/><div class="ph-actions">
-    <button class="btn ph-up">↑</button>
-    <button class="btn ph-down">↓</button>
-    <button class="btn ph-del">Eliminar</button></div>`;
+    node.className = 'ph ' + (i===0 ? 'is-cover' : 'is-gallery');
+    node.setAttribute('data-i', String(i));
+    node.setAttribute('data-src', url);
+    node.innerHTML = `<img src="${resolveImg(url)}"/><div class="ph-actions">
+      <button class="btn ph-up">↑</button>
+      <button class="btn ph-down">↓</button>
+      <button class="btn ph-del" aria-label="Eliminar" title="Eliminar">🗑️</button></div>`;
     grid.appendChild(node);
     document.getElementById('newPhotoUrl').value = '';
-    refreshGrid();
+    // reenganchar
+    node.querySelector('.ph-up').onclick = () => movePhoto(i, -1);
+    node.querySelector('.ph-down').onclick = () => movePhoto(i, 1);
+    node.querySelector('.ph-del').onclick = () => removePhoto(i);
   };
   document.getElementById('phCancel').onclick = () => {
     document.getElementById('photoModal').classList.add('hidden');

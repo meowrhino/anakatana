@@ -165,15 +165,27 @@
   };
 
   function ticketHTML(r) {
+    const nombreCliente = r?.direccion?.nombreCliente || r?.nombreCliente || '';
+    const email = r?.direccion?.email || r?.email || '';
+    const direccionParts = [r?.direccion?.direccion, r?.direccion?.cp, r?.direccion?.pais].filter(Boolean);
+    const direccionLinea = direccionParts.join(', ');
+    const lineasCarrito = (r.carrito || []).map(it => {
+      const nombre = it?.nombre || '';
+      const talla = it?.talla ? ` ${it.talla}` : '';
+      return `${nombre}${talla}`;
+    }).join(' · ');
+
     return `
     <li class="ticket">
       <div class="head">
         <span><strong>${r.id}</strong></span>
         <span class="muted">${new Date(r.fecha).toLocaleString()}</span>
       </div>
-      <div class="lines">Email: ${r?.direccion?.email || ''}</div>
+      <div class="lines">Nombre: ${nombreCliente}</div>
+      <div class="lines">Email: ${email}</div>
+      <div class="lines">Dirección: ${direccionLinea}</div>
       <div class="lines">Total: ${r.total}€ (Env: ${r.precioEnvio}€ · Fee: ${r.precioComision}€)</div>
-      <div class="lines">${(r.carrito || []).map(it => `${it.nombre} x${it.cantidad}`).join(' · ')}</div>
+      <div class="lines">Carrito: ${lineasCarrito}</div>
     </li>`;
   }
   function pintar(list) {
