@@ -81,7 +81,8 @@
     const nlAmountInitial = isNLEnabled() ? (subtotalBruto * NL_RATE) : 0;
     const subtotalNL = Math.max(0, subtotalBruto - nlAmountInitial);
 
-    document.getElementById("total-items").textContent = totalItems;
+    const itemsEl = document.getElementById("total-items");
+    if (itemsEl) itemsEl.textContent = totalItems;
 
     const brutoEl = document.getElementById("subtotal-bruto");
     const descRow = document.getElementById("row-desc-nl");
@@ -101,12 +102,6 @@
     document.getElementById("comision").textContent = "n/a"; // comisión en cero hasta selección
     document.getElementById("total-pago").textContent = subtotalNL.toFixed(2) + "€";
 
-    // 4. Manejar envío del formulario
-    const stripe = Stripe(
-      "pk_live_51Ls6nCLPcSoTiWwr0uMBdMDIRslS0tE6s09Rm4LOMc5UZwU1FexkUIuHfogQcVJCTcyIjZxKKtVsY4SHZE0Zykk500bPU7IDAd"
-    ); // ← Cambia aquí tu clave pública
-
-    // Manejar envío del formulario
     // 4. Manejar envío del formulario
     const form = document.getElementById("form-checkout");
     if (form) {
@@ -256,6 +251,14 @@
             "purchaseRecord",
             JSON.stringify(purchaseRecord)
           );
+          // Asegurarnos de que Stripe está disponible en este punto
+          const stripe = window.Stripe ? window.Stripe(
+            "pk_live_51Ls6nCLPcSoTiWwr0uMBdMDIRslS0tE6s09Rm4LOMc5UZwU1FexkUIuHfogQcVJCTcyIjZxKKtVsY4SHZE0Zykk500bPU7IDAd"
+          ) : null;
+          if (!stripe) {
+            alert("No se pudo cargar Stripe. Revisa tu conexión o bloqueadores y recarga la página.");
+            return;
+          }
           await stripe.redirectToCheckout({ sessionId: data.sessionId });
         } catch (error) {
           console.error(error);
