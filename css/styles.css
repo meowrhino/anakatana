@@ -553,6 +553,20 @@ body[data-page-type="product"] .home_titulo_precio {
   margin-left: 0.4em;
 }
 
+/* Opciones deshabilitadas por falta de stock */
+.dropdown-option.is-disabled {
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* Muesca de stock en cada opción */
+.dropdown-option .stock,
+.dropdown-toggle .stock {
+  font-size: 0.85em;
+  opacity: 0.75;
+  margin-left: .4rem;
+}
+
 /* =========================================================
    BOTÓN “AÑADIR AL CARRITO”
    ========================================================= */

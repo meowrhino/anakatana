@@ -186,6 +186,7 @@
 
 <script>
   const API = 'https://anakatana-backend.onrender.com';
+  const ENABLE_STOCK_TALLA = false; // usamos stock global (oculta columna y desactiva listeners)
   let productos = [];
   let dirtyStock = {};
   let token = '';
@@ -224,36 +225,63 @@
   };
 
   function rowHTML(p) {
+    const tallas = Array.isArray(p.tallas) ? p.tallas : [];
+
+    // bloque opcional de stock por talla (desactivado por ahora)
+    let stockSizes = `<em class="muted">—</em>`;
+    if (ENABLE_STOCK_TALLA && tallas.length) {
+      const sBy = (p.stockByTalla && typeof p.stockByTalla === 'object')
+        ? p.stockByTalla
+        : Object.fromEntries(tallas.map(t => [String(t.id), 2]));
+      stockSizes = `
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${tallas.map(t => `
+            <label style="display:flex;gap:4px;align-items:center">
+              <span>S${t.id}:</span>
+              <input type="number" class="st-size"
+                     data-id="${p.id}" data-size="${t.id}"
+                     min="0" value="${Number(sBy[String(t.id)] ?? 0)}" style="width:70px"/>
+            </label>
+          `).join('')}
+        </div>`;
+    }
+
     return `
-    <tr>
-      <td>${p.id}</td>
-      <td contenteditable="true" data-k="titulo" data-id="${p.id}">${p.titulo || ''}</td>
-      <td contenteditable="true" data-k="precio" data-id="${p.id}">${p.precio}</td>
-      <td contenteditable="true" data-k="peso" data-id="${p.id}">${p.peso || 0}</td>
-      <td contenteditable="true" data-k="tallaModelo" data-id="${p.id}">${p.tallaModelo ?? ''}</td>
-      <td><input type="number" class="st" data-id="${p.id}" min="0" value="${p.stock || 0}"/></td>
-      <td>
-        <div class="actions">
-          <button class="btn btn-fotos" data-id="${p.id}">Editar fotos</button>
-          <button class="btn btn-editar" data-id="${p.id}">Editar JSON</button>
-        </div>
-      </td>
-    </tr>`;
+      <tr>
+        <td>${p.id}</td>
+        <td contenteditable="true" data-k="titulo" data-id="${p.id}">${p.titulo || ''}</td>
+        <td contenteditable="true" data-k="precio" data-id="${p.id}">${p.precio}</td>
+        <td contenteditable="true" data-k="peso" data-id="${p.id}">${p.peso || 0}</td>
+        <td contenteditable="true" data-k="tallaModelo" data-id="${p.id}">${p.tallaModelo ?? ''}</td>
+        <td><input type="number" class="st" data-id="${p.id}" min="0" value="${p.stock || 0}"/></td>
+        ${ENABLE_STOCK_TALLA ? `<td>${stockSizes}</td>` : ``}
+        <td>
+          <div class="actions">
+            <button class="btn btn-fotos" data-id="${p.id}">Editar fotos</button>
+            <button class="btn btn-editar" data-id="${p.id}">Editar JSON</button>
+          </div>
+        </td>
+      </tr>`;
   }
 
   function renderTabla(list) {
     const el = document.getElementById('tabla');
     el.innerHTML = `
     <thead><tr>
-      <th>ID</th><th>Título</th><th>Precio</th><th>Peso (g)</th><th>Talla modelo</th><th>Stock</th><th>Fotos</th>
+      <th>ID</th><th>Título</th><th>Precio</th><th>Peso (g)</th><th>Talla modelo</th><th>Stock</th>
+      ${ENABLE_STOCK_TALLA ? `<th>Stock por talla</th>` : ``}
+      <th>Fotos</th>
     </tr></thead>
     <tbody>
       ${list.map(rowHTML).join('')}
     </tbody>`;
 
+    // stock global
     el.querySelectorAll('input.st').forEach(inp => {
       inp.addEventListener('input', e => { dirtyStock[e.target.dataset.id] = Number(e.target.value); });
     });
+
+    // ediciones básicas
     el.querySelectorAll('[contenteditable="true"]').forEach(cell => {
       cell.addEventListener('blur', e => {
         const id = Number(e.target.dataset.id);
@@ -266,9 +294,11 @@
         document.getElementById('status').textContent = 'Cambios locales sin guardar';
       });
     });
+
     el.querySelectorAll('.btn-fotos').forEach(b => {
       b.addEventListener('click', () => openPhotoEditor(Number(b.dataset.id)));
     });
+
     el.querySelectorAll('.btn-editar').forEach(b => {
       b.addEventListener('click', () => {
         const id = Number(b.dataset.id);
@@ -285,6 +315,21 @@
         }
       });
     });
+
+    // listeners de stock por talla: solo si activado
+    if (ENABLE_STOCK_TALLA) {
+      el.querySelectorAll('input.st-size').forEach(inp => {
+        inp.addEventListener('input', e => {
+          const id = Number(e.target.dataset.id);
+          const size = String(e.target.dataset.size);
+          const p = productos.find(x => x.id === id);
+          if (!p) return;
+          p.stockByTalla = p.stockByTalla || {};
+          p.stockByTalla[size] = Number(e.target.value);
+          document.getElementById('status').textContent = 'Cambios locales sin guardar';
+        });
+      });
+    }
   }
 
   document.getElementById('btnCargar').onclick = async () => {
@@ -314,6 +359,11 @@
   };
 
   // === Photo editor ===
+  function resolveImg(src){
+    if (!src) return src;
+    if (!/^https?:\/\//.test(src) && src.startsWith('img/')) return '../' + src;
+    return src;
+  }
   let currentPhotoId = null;
   function openPhotoEditor(id) {
     currentPhotoId = id;
@@ -322,7 +372,7 @@
     const grid = document.getElementById('phGrid');
     grid.innerHTML = imgs.map((src, i) => `
     <div class="ph" data-i="${i}">
-      <img src="${src}" alt="foto ${i + 1}"/>
+      <img src="${resolveImg(src)}" alt="foto ${i + 1}"/>
       <div class="ph-actions">
         <button class="btn ph-up" data-i="${i}">↑</button>
         <button class="btn ph-down" data-i="${i}">↓</button>
@@ -358,7 +408,7 @@
     const grid = document.getElementById('phGrid');
     grid.innerHTML = arr.map((src, k) => `
     <div class="ph" data-i="${k}">
-      <img src="${src}" alt="foto ${k + 1}"/>
+      <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
       <div class="ph-actions">
         <button class="btn ph-up" data-i="${k}">↑</button>
         <button class="btn ph-down" data-i="${k}">↓</button>
@@ -375,7 +425,7 @@
     const grid = document.getElementById('phGrid');
     grid.innerHTML = arr.map((src, k) => `
     <div class="ph" data-i="${k}">
-      <img src="${src}" alt="foto ${k + 1}"/>
+      <img src="${resolveImg(src)}" alt="foto ${k + 1}"/>
       <div class="ph-actions">
         <button class="btn ph-up" data-i="${k}">↑</button>
         <button class="btn ph-down" data-i="${k}">↓</button>

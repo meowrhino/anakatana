@@ -104,6 +104,42 @@ window.addEventListener("DOMContentLoaded", async () => {
       </div>
     `;
 
+    // --- Inicialización simple del selector de tallas (stock global) ---
+    (function initTallas() {
+      const dd = document.querySelector(".dropdown");
+      if (!dd) return;
+
+      const toggle = dd.querySelector(".dropdown-toggle");
+      const menu = dd.querySelector(".dropdown-menu");
+
+      function applySelected(id, desc) {
+        dd.dataset.tallaId = id || "";
+        dd.dataset.selected = (producto.tallas || []).findIndex(t => String(t.id) === String(id)) || 0;
+        toggle.innerHTML = `<strong>talla ${id || ""}</strong> <span class="desc">${desc || ""}</span>`;
+      }
+
+      const sel = (producto.tallas || [])[0] || null;
+      applySelected(sel?.id, sel?.descripcion);
+
+      toggle.addEventListener("click", () => { dd.classList.toggle("open"); });
+      document.addEventListener("click", (e) => { if (!dd.contains(e.target)) dd.classList.remove("open"); });
+
+      menu.addEventListener("click", (e) => {
+        const opt = e.target.closest(".dropdown-option");
+        if (!opt) return;
+        const id = opt.dataset.id;
+        if (id === "custom") {
+          dd.classList.remove("open");
+          dd.dataset.tallaId = "custom";
+          toggle.innerHTML = `custom (send mail)`;
+          return;
+        }
+        const talla = (producto.tallas || []).find(t => String(t.id) === String(id));
+        applySelected(id, talla?.descripcion || "");
+        dd.classList.remove("open");
+      });
+    })();
+
     // --- Galería: thumbs bajo la imagen, centrados y alineados con ésta ---
     (function initGaleria() {
       const media = document.querySelector(".producto-media");

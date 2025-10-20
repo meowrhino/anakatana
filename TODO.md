@@ -1,3 +1,11 @@
+ayudame con este TODO: hay muchas tareas que ya hemos hecho
+
+una de ellas quiero que añadas "terminar lo que empezaste en modificaciones selector stock(conversacion con chatgpt)" "revisar conversacion chatgpt "RENDER ANA"
+
+
+
+
+
 
 # Plan de tareas — Ana Katana
 Marca cada casilla al completar. He agrupado y clarificado algunos puntos.
