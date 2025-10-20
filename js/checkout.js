@@ -36,14 +36,14 @@
 
     const lista = document.getElementById("lista-carrito");
     lista.innerHTML = "";
-    let subtotal = 0;
+    let subtotal = 0; let subtotalBruto = 0;
     let totalItems = 0;
 
     // 2. Renderizar ítems del carrito
     carrito.forEach((item, index) => {
       totalItems += item.cantidad;
       const itemTotal = item.precio * item.cantidad;
-      subtotal += itemTotal;
+      subtotalBruto += itemTotal;
 
       const row = document.createElement("div");
       row.className = "checkout-item";
@@ -78,9 +78,24 @@
     });
 
     // 3. Calcular y mostrar totales (sin comisión hasta seleccionar zona)
-    const envioCoste = 0; // envío por defecto sin elegir zona
+    const nlAmountInitial = isNLEnabled() ? (subtotalBruto * NL_RATE) : 0;
+    const subtotalNL = Math.max(0, subtotalBruto - nlAmountInitial);
+
     document.getElementById("total-items").textContent = totalItems;
-    const subtotalNL = applyNL(subtotal);
+
+    const brutoEl = document.getElementById("subtotal-bruto");
+    const descRow = document.getElementById("row-desc-nl");
+    const descEl = document.getElementById("descuento-nl");
+    if (brutoEl) brutoEl.textContent = `${subtotalBruto.toFixed(2)}€`;
+    if (descRow && descEl) {
+      if (nlAmountInitial > 0) {
+        descRow.classList.remove('hidden');
+        descEl.textContent = `-${nlAmountInitial.toFixed(2)}€`;
+      } else {
+        descRow.classList.add('hidden');
+        descEl.textContent = `-0.00€`;
+      }
+    }
     document.getElementById("subtotal").textContent = subtotalNL.toFixed(2) + "€";
     document.getElementById("envio").textContent = "n/a";
     document.getElementById("comision").textContent = "n/a"; // comisión en cero hasta selección
@@ -256,15 +271,28 @@
   // Helper para recalcular totales al elegir zona (para dropdown)
   function actualizarTotalesCheckout(zona) {
     if (!zona) return;
-    const st = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
-    const subtotal = applyNL(st);
+    const stBruto = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
+    const nlAmount = isNLEnabled() ? (stBruto * NL_RATE) : 0;
+    const subtotal = Math.max(0, stBruto - nlAmount);
+
+    // Update breakdown DOM
+    const brutoEl = document.getElementById("subtotal-bruto");
+    const descRow = document.getElementById("row-desc-nl");
+    const descEl = document.getElementById("descuento-nl");
+    if (brutoEl) brutoEl.textContent = `${stBruto.toFixed(2)}€`;
+    if (descRow && descEl) {
+      if (nlAmount > 0) { descRow.classList.remove('hidden'); descEl.textContent = `-${nlAmount.toFixed(2)}€`; }
+      else { descRow.classList.add('hidden'); descEl.textContent = `-0.00€`; }
+    }
+    const subEl = document.getElementById("subtotal");
+    if (subEl) subEl.textContent = `${subtotal.toFixed(2)}€`;
+
     const pesoTotal = carrito.reduce((s, it) => s + it.peso * it.cantidad, 0);
     const envioCoste = window.calcularEnvioCoste(pesoTotal, zona) || 0;
     const baseTotal = subtotal + envioCoste;
     const total = baseTotal / (1 - FEE_RATE);
     const comision = total * FEE_RATE;
 
-    // Actualizar DOM
     const envioEl = document.getElementById("envio");
     const comisionEl = document.getElementById("comision");
     const totalEl = document.getElementById("total-pago");
@@ -366,11 +394,25 @@
   }
   function recomputeTotalsLive(){
     const zona = document.getElementById('zonaDropdown')?.dataset?.selected || '';
+    const stBruto = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
+    const nlAmount = isNLEnabled() ? (stBruto * NL_RATE) : 0;
+    const stNL = Math.max(0, stBruto - nlAmount);
+
+    const brutoEl = document.getElementById('subtotal-bruto');
+    const descRow = document.getElementById('row-desc-nl');
+    const descEl = document.getElementById('descuento-nl');
+    if (brutoEl) brutoEl.textContent = `${stBruto.toFixed(2)}€`;
+    if (descRow && descEl) {
+      if (nlAmount > 0) { descRow.classList.remove('hidden'); descEl.textContent = `-${nlAmount.toFixed(2)}€`; }
+      else { descRow.classList.add('hidden'); descEl.textContent = `-0.00€`; }
+    }
+
+    document.getElementById('subtotal').textContent = stNL.toFixed(2) + '€';
+
     if (zona) actualizarTotalesCheckout(zona); else {
-      const st = carrito.reduce((s, it) => s + it.precio * it.cantidad, 0);
-      const stNL = applyNL(st);
-      document.getElementById('subtotal').textContent = stNL.toFixed(2) + '€';
       document.getElementById('total-pago').textContent = stNL.toFixed(2) + '€';
+      document.getElementById('envio').textContent = 'n/a';
+      document.getElementById('comision').textContent = 'n/a';
     }
   }
   if (nlCheck) nlCheck.addEventListener('change', recomputeTotalsLive);

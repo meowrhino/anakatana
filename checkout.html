@@ -15,6 +15,14 @@
   <title>hifas studio</title>
   <link rel="icon" href="root/favicon.ico" type="image/x-icon">
 
+  <style>
+    /* Fuerza que el opt-in NL se vea en una sola columna y ocupe todo el ancho */
+    #nl-optin-row { grid-column: 1 / -1; }
+    #nl-optin-row .checkbox { display: flex; align-items: center; gap: .6rem; white-space: normal; }
+
+    /* Utilidad para ocultar filas en totales */
+    .hidden { display: none; }
+  </style>
 </head>
 
 <body data-page-type="checkout">
@@ -86,7 +94,8 @@
     </section>
 
     <div class="checkout-totales">
-      <span>Total productos: <strong id="total-items">0</strong></span>
+      <span>Subtotal productos: <strong id="subtotal-bruto">0.00€</strong></span>
+      <span id="row-desc-nl" class="hidden">Descuento newsletter: <strong id="descuento-nl">-0.00€</strong></span>
       <span>Subtotal: <strong id="subtotal">0.00€</strong></span>
       <span>Envío: <strong id="envio">?€</strong></span>
       <span>Comisión: <strong id="comision">?€</strong></span>
