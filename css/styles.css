@@ -169,22 +169,34 @@ a:hover {
   right: 5vw;
   display: grid;
   gap: 2rem;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr; /* base: 1 columna en móviles */
   overflow-y: auto;
   overflow-x: visible;
   scroll-behavior: smooth;
 }
 
+/*  ≥480px → 2 columnas */
+@media (min-width: 480px) {
+  #galeria-productos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/*  ≥768px → 3 columnas */
 @media (min-width: 768px) {
   #galeria-productos {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/*  ≥1200px → 4 columnas */
 @media (min-width: 1200px) {
   #galeria-productos {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/*  ≥1600px → 5 columnas */
 @media (min-width: 1600px) {
   #galeria-productos {
     grid-template-columns: repeat(5, 1fr);
