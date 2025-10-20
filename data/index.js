@@ -58,7 +58,10 @@ const DEFAULT_ORIGINS = [
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "https://meowrhino.github.io",
+  "https://anakatana.me",
+  "https://www.anakatana.me",
 ];
+
 const ORIGINS = (process.env.CORS_ORIGINS || DEFAULT_ORIGINS.join(","))
   .split(",")
   .map(s => s.trim())
@@ -492,7 +495,6 @@ app.post("/newsletter", async (req, res) => {
     if (!yaEstaba) {
       data.suscritos.push(email);
       try { guardarNewsletter(data); } catch (e) { console.error("Error guardando newsletter.json local:", e); }
-      // Subir a GitHub para reflejar en el repo
       const body = JSON.stringify(data, null, 2);
       try {
         await upsertFileOnGitHub(
@@ -506,12 +508,39 @@ app.post("/newsletter", async (req, res) => {
       return res.status(201).json({ ok: true, new: true, email, total: data.suscritos.length });
     }
 
-    // Ya estaba
-    return res.status(409).json({ ok: true, new: false, email, total: data.suscritos.length });
+    // ✅ Idempotente: si ya estaba, 200 (antes 409)
+    return res.status(200).json({ ok: true, new: false, email, total: data.suscritos.length });
   } catch (err) {
     console.error("/newsletter error:", err);
     return res.status(500).json({ error: "internal" });
   }
+});
+
+// DELETE /newsletter/:email — idempotente (204 aunque no exista)
+app.delete("/newsletter/:email", async (req, res) => {
+  const email = String(req.params.email || "").trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: "email requerido" });
+  try {
+    const data = leerNewsletter();
+    const idx = data.suscritos.indexOf(email);
+    if (idx !== -1) {
+      data.suscritos.splice(idx, 1);
+      try { guardarNewsletter(data); } catch (e) { console.error("Error guardando newsletter.json local:", e); }
+      const body = JSON.stringify(data, null, 2);
+      try {
+        await upsertFileOnGitHub(
+          "data/newsletter.json",
+          body,
+          `chore: newsletter remove ${email} (${new Date().toISOString()})`
+        );
+      } catch (e) {
+        console.error("GitHub upsert newsletter.json falló:", e.message || e);
+      }
+    }
+  } catch (e) {
+    console.error("/newsletter delete error:", e);
+  }
+  return res.sendStatus(204);
 });
 
 // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────

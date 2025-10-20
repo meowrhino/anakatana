@@ -379,6 +379,25 @@
 
   const nlCheck = document.getElementById('nl-check');
   const emailEl = document.getElementById('email');
+  async function nlSubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email })
+      });
+      localStorage.setItem('nl_email', email.trim().toLowerCase());
+    } catch(_){}
+  }
+
+  async function nlUnsubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`, { method:'DELETE' });
+    } catch(_){}
+    localStorage.removeItem('nl_email');
+  }
   // Auto-check NL si el email ya está suscrito en backend
   if (emailEl) {
     emailEl.addEventListener('blur', async () => {
@@ -418,6 +437,15 @@
       document.getElementById('comision').textContent = 'n/a';
     }
   }
-  if (nlCheck) nlCheck.addEventListener('change', recomputeTotalsLive);
+  if (nlCheck) nlCheck.addEventListener('change', async () => {
+    const em = ((emailEl?.value) || localStorage.getItem('nl_email') || '').trim().toLowerCase();
+    if (!em) { recomputeTotalsLive(); return; }
+    if (nlCheck.checked) {
+      await nlSubscribe(em);
+    } else {
+      await nlUnsubscribe(em);
+    }
+    recomputeTotalsLive();
+  });
   if (emailEl) emailEl.addEventListener('input', recomputeTotalsLive);
 })();

@@ -290,7 +290,7 @@ function abrirCarrito() {
 
   // 4) Suscripción NL + acciones
 
-  // Bloque promo NL (10% descuento) + input email
+  // Bloque promo NL (10% descuento) + input email + checkbox
   const promoNL = document.createElement("div");
   promoNL.className = "carrito-nl";
   const savedNL = (localStorage.getItem('nl_email') || '').trim().toLowerCase();
@@ -299,6 +299,10 @@ function abrirCarrito() {
       <p class="carrito-nl-text">¿Quieres <strong>10% de descuento</strong> en los productos? Suscríbete a la newsletter.</p>
       <div class="carrito-nl-row">
         <input id="nl-input-carrito" class="nl-input" type="email" placeholder="tu@email" value="${savedNL}">
+        <label class="checkbox" style="display:flex; align-items:center; gap:.5rem; cursor:pointer; margin-left:.5rem;">
+          <input type="checkbox" id="nl-check-modal">
+          <span>NL −10%</span>
+        </label>
       </div>
     </div>
   `;
@@ -324,6 +328,7 @@ function abrirCarrito() {
 
   // Lógica de suscripción desde el carrito (con pre-chequeo)
   const nlInput = promoNL.querySelector('#nl-input-carrito');
+  const nlCheckModal = promoNL.querySelector('#nl-check-modal');
   function updateNLState(){
     const hasMail = (nlInput.value || '').trim().toLowerCase().length > 3;
     btnNL.classList.toggle('is-disabled', !hasMail);
@@ -337,6 +342,26 @@ function abrirCarrito() {
     btnNL.classList.add('is-disabled');
     btnNL.disabled = true;
     localStorage.setItem('nl_email', email);
+    if (nlCheckModal) nlCheckModal.checked = true;
+  }
+
+  async function nlSubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      localStorage.setItem('nl_email', email.trim().toLowerCase());
+    } catch(_){}
+  }
+  async function nlUnsubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`, { method: 'DELETE' });
+    } catch(_){}
+    localStorage.removeItem('nl_email');
   }
 
   // si ya hay un email guardado, comprobar en el back (async IIFE)
@@ -345,6 +370,7 @@ function abrirCarrito() {
       try {
         const chk = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(savedNL)}`).then(r=>r.json());
         if (chk && chk.suscrito) await markAsSubscribed(savedNL);
+        if (chk && chk.suscrito && nlCheckModal) nlCheckModal.checked = true;
       } catch (_) {}
     })();
   }
@@ -371,8 +397,27 @@ function abrirCarrito() {
       btnNL.textContent = '¡suscrita!';
       await new Promise(res=>setTimeout(res, 1000));
       await markAsSubscribed(email);
+      if (nlCheckModal) nlCheckModal.checked = true;
     } catch (e) {
       console.warn('No se pudo suscribir ahora');
+    }
+  });
+
+  nlCheckModal?.addEventListener('change', async () => {
+    const em = ((nlInput?.value) || localStorage.getItem('nl_email') || '').trim().toLowerCase();
+    if (!em){
+      nlCheckModal.checked = false; // sin email no podemos tocar backend
+      return;
+    }
+    if (nlCheckModal.checked) {
+      await nlSubscribe(em);
+      await markAsSubscribed(em);
+    } else {
+      await nlUnsubscribe(em);
+      // reset del botón por si estaba en “ya suscrita”
+      btnNL.textContent = 'suscribirme';
+      btnNL.classList.remove('is-disabled');
+      btnNL.disabled = false;
     }
   });
 
