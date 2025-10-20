@@ -327,7 +327,7 @@ async function subirRegistroAGitHub(contenidoBase64, sha) {
  * Body esperado: { carrito: [{ nombre, precio, cantidad }], envio: number, comision?: number }
  */
 app.post("/crear-sesion", async (req, res) => {
-  const { carrito, envio, comision } = req.body;
+  const { carrito, envio, comision, successUrl, cancelUrl } = req.body;
 
   // Valida carrito
   const check = validateCarritoCheckout(carrito);
@@ -380,12 +380,19 @@ app.post("/crear-sesion", async (req, res) => {
   }
 
   try {
+    const success = (typeof successUrl === 'string' && successUrl.trim())
+      ? successUrl.trim()
+      : `${FRONTEND_URL}/gracias.html`;
+    const cancel = (typeof cancelUrl === 'string' && cancelUrl.trim())
+      ? cancelUrl.trim()
+      : `${FRONTEND_URL}/sorry.html`;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: itemsStripe,
       mode: "payment",
-      success_url: `${FRONTEND_URL}/gracias.html`,
-      cancel_url: `${FRONTEND_URL}/sorry.html`,
+      success_url: success,
+      cancel_url: cancel,
     });
     return res.json({ sessionId: session.id });
   } catch (error) {

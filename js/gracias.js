@@ -3,6 +3,9 @@
 // Gracias.js – Lógica de la página de agradecimiento
 document.addEventListener('DOMContentLoaded', () => {
   console.log('▶ Página Gracias cargada');
+  if (!window.API_BASE) {
+    window.API_BASE = 'https://anakatana-backend.onrender.com';
+  }
 
 
   // 2. Leer el objeto 'purchaseRecord' desde localStorage

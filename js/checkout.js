@@ -187,6 +187,9 @@
         }));
 
         try {
+          const basePath = window.location.pathname.startsWith('/anakatana') ? '/anakatana' : '';
+          const successUrl = `${window.location.origin}${basePath}/gracias.html`;
+          const cancelUrl  = `${window.location.origin}${basePath}/sorry.html`;
           const response = await fetch(
             `${window.API_BASE}/crear-sesion`,
             {
@@ -204,6 +207,8 @@
                 direccion: addressData,
             email: addressData.email,
                 fecha: new Date().toISOString(),
+                successUrl,
+                cancelUrl,
               }),
             }
           );
