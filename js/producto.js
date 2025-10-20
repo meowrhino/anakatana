@@ -89,8 +89,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             <p class="precio">
               ${
                 producto.rebajas === "si" && producto.precioRebajas
-                  ? `<span class="precio--tachado">${producto.precio}€</span>
-                     <span class="precio--rebajado">${producto.precioRebajas}€</span>`
+                  ? `<span class="precio--rebajado">${producto.precioRebajas}€</span>
+                     <span class="precio--tachado">${producto.precio}€</span>`
                   : `<span>${producto.precio}€</span>`
               }
             </p>
