@@ -212,8 +212,10 @@
           // 2️⃣ Guardamos un registro local para “gracias.js”
           // Preparar datos para registro: solo talla por ítem y cálculo de precios en hora local
           const carritoRecord = carrito.map((item) => ({
+            id: item.id,
             nombre: item.nombre,
             talla: item.talla || null,
+            cantidad: item.cantidad,
           }));
           // Calcular precios
           const subtotalProductos = subtotalConNL;

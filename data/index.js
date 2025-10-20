@@ -416,28 +416,50 @@ app.post("/guardar-carrito", async (req, res) => {
   // 2) Agregar el nuevo registro
   registros.push(nuevoRegistro);
 
-  // === MVP: restar stock según carrito ===
+  // === Actualización de stock según carrito (por talla si aplica) ===
   try {
     const productos = leerProductos();
     if (Array.isArray(nuevoRegistro?.carrito)) {
       nuevoRegistro.carrito.forEach((it) => {
         const id = Number(it.id);
         const cant = Number(it.cantidad) || 0;
+        if (!Number.isInteger(id) || cant <= 0) return;
         const p = productos.find((x) => Number(x.id) === id);
-        if (p) {
+        if (!p) { console.warn("⚠️ Producto no encontrado al restar stock:", id); return; }
+
+        // Extraer id de talla si viene como cadena tipo "talla 3" o "talla M"
+        let tallaKey = null;
+        if (typeof it.talla === "string" && it.talla.trim()) {
+          const m = it.talla.match(/talla\s+(.+)$/i);
+          tallaKey = (m ? m[1] : it.talla).toString().trim();
+        }
+
+        if (tallaKey) {
+          // Asegurar mapa de tallas
+          p.stockByTalla = (p.stockByTalla && typeof p.stockByTalla === 'object') ? p.stockByTalla : {};
+          const k = String(tallaKey);
+          const prev = Number(p.stockByTalla[k] ?? 0);
+          p.stockByTalla[k] = Math.max(0, prev - cant);
+          // Recalcular stock global como suma de tallas si hay mapa
+          const vals = Object.values(p.stockByTalla);
+          if (vals.length) {
+            p.stock = vals.reduce((a, b) => a + Number(b || 0), 0);
+          } else {
+            p.stock = Math.max(0, Number(p.stock) || 0);
+          }
+        } else {
+          // Sin talla específica: restar del stock global
           const prev = Number(p.stock) || 0;
           p.stock = Math.max(0, prev - cant);
-        } else {
-          console.warn("⚠️ Producto no encontrado al restar stock:", id);
         }
       });
       guardarProductos(productos);
-      console.log("✅ Stock actualizado tras compra");
+      console.log("✅ Stock actualizado tras compra (con tallas)");
     }
   } catch (e) {
     console.error("❌ Error actualizando stock tras compra:", e);
   }
-  // === /MVP ===
+  // === /Actualización stock ===
 
   // 3) Escribir el archivo actualizado + subir a GitHub
   try {
@@ -673,10 +695,21 @@ app.post("/admin/stock-bulk", adminAuth, (req, res) => {
   let updated = 0;
   updates.forEach((u) => {
     const id = Number(u.id);
-    const s = Number(u.stock);
-    if (!Number.isInteger(id) || !Number.isFinite(s) || s < 0) return;
     const p = productos.find((x) => Number(x.id) === id);
-    if (p) {
+    if (!p) return;
+
+    if (u && typeof u.stockByTalla === 'object' && u.stockByTalla !== null) {
+      // Normaliza y persiste mapa de tallas
+      p.stockByTalla = Object.fromEntries(
+        Object.entries(u.stockByTalla).map(([k, v]) => [String(k), Math.max(0, Number(v) || 0)])
+      );
+      p.stock = Object.values(p.stockByTalla).reduce((a, b) => a + Number(b || 0), 0);
+      updated++;
+      return;
+    }
+
+    const s = Number(u.stock);
+    if (Number.isFinite(s) && s >= 0) {
       p.stock = s;
       updated++;
     }
