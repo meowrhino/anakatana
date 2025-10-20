@@ -18,15 +18,27 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "30cm width x 65cm length" },
-      { "id": 2, "descripcion": "34cm width x 67cm length" },
-      { "id": 3, "descripcion": "38cm width x 69cm length" },
-      { "id": 4, "descripcion": "42cm width x 71cm length" }
+      {
+        "id": 1,
+        "descripcion": "30cm width x 65cm length"
+      },
+      {
+        "id": 2,
+        "descripcion": "34cm width x 67cm length"
+      },
+      {
+        "id": 3,
+        "descripcion": "38cm width x 69cm length"
+      },
+      {
+        "id": 4,
+        "descripcion": "42cm width x 71cm length"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "si",
     "precioRebajas": "25",
-    "stock": 4,
+    "stock": 3,
     "soldOut": "no"
   },
   {
@@ -50,9 +62,18 @@
     ],
     "colección": "BACKROOMS",
     "tallas": [
-      { "id": 1, "descripcion": "80cm waist x 67cm length" },
-      { "id": 2, "descripcion": "90cm waist x 68cm length" },
-      { "id": 3, "descripcion": "100cm waist x 69 cm length" }
+      {
+        "id": 1,
+        "descripcion": "80cm waist x 67cm length"
+      },
+      {
+        "id": 2,
+        "descripcion": "90cm waist x 68cm length"
+      },
+      {
+        "id": 3,
+        "descripcion": "100cm waist x 69 cm length"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "si",
@@ -80,12 +101,30 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "40cm width x 47cm length" },
-      { "id": 2, "descripcion": "42cm width x 49cm length" },
-      { "id": 3, "descripcion": "44cm width x 51cm length" },
-      { "id": 4, "descripcion": "51cm width x 70cm length" },
-      { "id": 5, "descripcion": "54cm width x 73cm length" },
-      { "id": 6, "descripcion": "56cm width x 74cm length" }
+      {
+        "id": 1,
+        "descripcion": "40cm width x 47cm length"
+      },
+      {
+        "id": 2,
+        "descripcion": "42cm width x 49cm length"
+      },
+      {
+        "id": 3,
+        "descripcion": "44cm width x 51cm length"
+      },
+      {
+        "id": 4,
+        "descripcion": "51cm width x 70cm length"
+      },
+      {
+        "id": 5,
+        "descripcion": "54cm width x 73cm length"
+      },
+      {
+        "id": 6,
+        "descripcion": "56cm width x 74cm length"
+      }
     ],
     "tallaModelo": 4,
     "rebajas": "si",
@@ -111,7 +150,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "one-size" }
+      {
+        "id": 1,
+        "descripcion": "one-size"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -138,7 +180,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "custom (send mail)" }
+      {
+        "id": 1,
+        "descripcion": "custom (send mail)"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -164,7 +209,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "one-size" }
+      {
+        "id": 1,
+        "descripcion": "one-size"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -190,7 +238,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "one-size" }
+      {
+        "id": 1,
+        "descripcion": "one-size"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
@@ -211,7 +262,10 @@
     ],
     "colección": "BASICS",
     "tallas": [
-      { "id": 1, "descripcion": "one-size" }
+      {
+        "id": 1,
+        "descripcion": "one-size"
+      }
     ],
     "tallaModelo": 1,
     "rebajas": "no",
