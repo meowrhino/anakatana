@@ -28,18 +28,25 @@ window.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const estaAgotado = producto.soldOut === "si" || producto.stock === 0;
+    // --- Normalize stockByTalla and compute total stock ---
+    const tallasArr = Array.isArray(producto.tallas) ? producto.tallas : [];
+    const sBySrc = (producto.stockByTalla && typeof producto.stockByTalla === 'object') ? producto.stockByTalla : {};
+    producto.stockByTalla = Object.fromEntries(tallasArr.map(t => [String(t.id), Number(sBySrc[String(t.id)] ?? producto.stock ?? 0)]));
+    const stockTotal = Object.values(producto.stockByTalla).reduce((a,b)=>a+Number(b||0),0);
+
+    const estaAgotado = producto.soldOut === "si" || stockTotal === 0;
     const makingTime =
       "All products are handmade and individually made ^^* so they take between 2 and 4 weeks to make depending on the number of orders. We appreciate your support <3";
 
     // --- Tallas (dropdown) ---
     let tallas = "";
     if (producto.tallas?.length) {
-      const opciones = producto.tallas
-        .map((t, i) => {
-          return `<div class="dropdown-option" data-index="${i}" data-id="${t.id}" data-desc="${t.descripcion}" role="option"><strong>talla ${t.id}</strong> <span class="desc">${t.descripcion || ""}</span></div>`;
-        })
-        .join("");
+      const opciones = producto.tallas.map((t,i) => {
+        const st = Number(producto.stockByTalla?.[String(t.id)] ?? 0);
+        const disabled = st <= 0 ? ' aria-disabled="true" data-disabled="1"' : '';
+        const sold = st <= 0 ? ' — agotada' : '';
+        return `<div class="dropdown-option" data-index="${i}" data-id="${t.id}" data-desc="${t.descripcion}" data-stock="${st}" role="option"${disabled}><strong>talla ${t.id}</strong> <span class="desc">${t.descripcion || ""}</span><span class="stock">${sold}</span></div>`;
+      }).join("");
 
       const extraOption =
         producto.tallas.length > 1
@@ -47,8 +54,9 @@ window.addEventListener("DOMContentLoaded", async () => {
           : "";
 
       const sel =
-        producto.tallas.find((t) => t.id === producto.tallaModelo) ||
-        producto.tallas[0];
+        producto.tallas.find((t) => Number(producto.stockByTalla?.[String(t.id)] ?? 0) > 0 && (producto.tallaModelo ? t.id === producto.tallaModelo : true))
+        || producto.tallas.find((t) => Number(producto.stockByTalla?.[String(t.id)] ?? 0) > 0)
+        || producto.tallas[0];
 
       tallas = `
         <div class="talla-wrapper">
@@ -113,12 +121,19 @@ window.addEventListener("DOMContentLoaded", async () => {
       const menu = dd.querySelector(".dropdown-menu");
 
       function applySelected(id, desc) {
+        const st = Number(producto.stockByTalla?.[String(id)] ?? 0);
         dd.dataset.tallaId = id || "";
         dd.dataset.selected = (producto.tallas || []).findIndex(t => String(t.id) === String(id)) || 0;
-        toggle.innerHTML = `<strong>talla ${id || ""}</strong> <span class="desc">${desc || ""}</span>`;
+        const soldTxt = st <= 0 ? ' — agotada' : '';
+        toggle.innerHTML = id === 'custom' ? 'custom (send mail)' : `<strong>talla ${id || ""}</strong> <span class="desc">${desc || ""}</span><span class="stock">${soldTxt}</span>`;
+        const btn = document.querySelector(".btn-añadir-carrito");
+        if (btn) btn.disabled = (st <= 0) && id !== 'custom';
       }
 
-      const sel = (producto.tallas || [])[0] || null;
+      const sel =
+        producto.tallas.find((t) => Number(producto.stockByTalla?.[String(t.id)] ?? 0) > 0 && (producto.tallaModelo ? t.id === producto.tallaModelo : true))
+        || producto.tallas.find((t) => Number(producto.stockByTalla?.[String(t.id)] ?? 0) > 0)
+        || producto.tallas[0];
       applySelected(sel?.id, sel?.descripcion);
 
       toggle.addEventListener("click", () => { dd.classList.toggle("open"); });
@@ -128,10 +143,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         const opt = e.target.closest(".dropdown-option");
         if (!opt) return;
         const id = opt.dataset.id;
+        if (opt.dataset.disabled === "1") return;
         if (id === "custom") {
           dd.classList.remove("open");
           dd.dataset.tallaId = "custom";
           toggle.innerHTML = `custom (send mail)`;
+          const btn = document.querySelector(".btn-añadir-carrito"); if (btn) btn.disabled = false;
           return;
         }
         const talla = (producto.tallas || []).find(t => String(t.id) === String(id));
@@ -203,8 +220,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (e.target.classList.contains("btn-añadir-carrito")) {
       const dropdown = document.querySelector(".dropdown");
       const tallaId = dropdown?.dataset.tallaId || null;
+      if (!tallaId) return;
+      if (tallaId !== 'custom') {
+        const st = Number(producto.stockByTalla?.[String(tallaId)] ?? 0);
+        if (st <= 0) { alert('Esa talla está agotada'); return; }
+      }
       const talla = tallaId ? `talla ${tallaId}` : null;
-
       window.agregarAlCarrito(
         producto.id,
         producto.titulo,

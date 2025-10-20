@@ -35,6 +35,16 @@
         "descripcion": "42cm width x 71cm length"
       }
     ],
+    "stockByTalla": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 2,
+      "6": 2,
+      "7": 2,
+      "8": 2
+    },
     "tallaModelo": 1,
     "rebajas": "si",
     "precioRebajas": "25",
@@ -75,6 +85,16 @@
         "descripcion": "100cm waist x 69 cm length"
       }
     ],
+    "stockByTalla": {
+      "1": 7,
+      "2": 7,
+      "3": 7,
+      "4": 7,
+      "5": 7,
+      "6": 7,
+      "7": 7,
+      "8": 7
+    },
     "tallaModelo": 1,
     "rebajas": "si",
     "precioRebajas": "70",
@@ -126,6 +146,16 @@
         "descripcion": "56cm width x 74cm length"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 4,
     "rebajas": "si",
     "precioRebajas": "25",
@@ -155,6 +185,16 @@
         "descripcion": "one-size"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
@@ -185,6 +225,16 @@
         "descripcion": "custom (send mail)"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
@@ -214,6 +264,16 @@
         "descripcion": "one-size"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
@@ -243,6 +303,16 @@
         "descripcion": "one-size"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
@@ -267,6 +337,16 @@
         "descripcion": "one-size"
       }
     ],
+    "stockByTalla": {
+      "1": 5,
+      "2": 5,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
+    },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",

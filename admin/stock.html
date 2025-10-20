@@ -204,9 +204,10 @@
 
 <script>
   const API = 'https://anakatana-backend.onrender.com';
-  const ENABLE_STOCK_TALLA = false; // usamos stock global (oculta columna y desactiva listeners)
+  const ENABLE_STOCK_TALLA = true; // usamos stock global (oculta columna y desactiva listeners)
   let productos = [];
   let dirtyStock = {};
+  let dirtyStockBySize = {};
   let token = '';
 
   const tokenInp = document.getElementById('token');
@@ -250,7 +251,7 @@
     if (ENABLE_STOCK_TALLA && tallas.length) {
       const sBy = (p.stockByTalla && typeof p.stockByTalla === 'object')
         ? p.stockByTalla
-        : Object.fromEntries(tallas.map(t => [String(t.id), 2]));
+        : Object.fromEntries(tallas.map(t => [String(t.id), Number(p.stock || 0)]));
       stockSizes = `
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${tallas.map(t => `
@@ -344,6 +345,7 @@
           if (!p) return;
           p.stockByTalla = p.stockByTalla || {};
           p.stockByTalla[size] = Number(e.target.value);
+          dirtyStockBySize[id] = {...(dirtyStockBySize[id] || {}), [size]: Number(e.target.value)};
           document.getElementById('status').textContent = 'Cambios locales sin guardar';
         });
       });
@@ -362,18 +364,26 @@
 
   document.getElementById('btnGuardarStock').onclick = async () => {
     const ok = await ensureAuth(); if (!ok) return;
-    const updates = Object.entries(dirtyStock).map(([id, stock]) => ({ id: Number(id), stock: Number(stock) }));
+    const updatesMap = {};
+    Object.entries(dirtyStock).forEach(([id, stock]) => { updatesMap[id] = { id: Number(id), stock: Number(stock) }; });
+    Object.entries(dirtyStockBySize).forEach(([id, sizes]) => {
+      const idNum = Number(id);
+      const stockByTalla = Object.fromEntries(Object.entries(sizes).map(([k,v]) => [String(k), Number(v)]));
+      const sum = Object.values(stockByTalla).reduce((a,b) => a + Number(b || 0), 0);
+      updatesMap[id] = { ...(updatesMap[id] || { id: idNum }), stockByTalla, stock: sum };
+    });
+    const updates = Object.values(updatesMap);
     if (!updates.length) { alert('No hay cambios de stock'); return; }
     const r = await fetch(`${API}/admin/stock-bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || tokenInp.value.trim()) },
       body: JSON.stringify({ updates })
     });
-    const data = await r.json();
-    if (!r.ok) return alert('Error: ' + (data.error || r.status));
-    alert('Actualizados: ' + data.updated);
-    dirtyStock = {};
-    document.getElementById('status').textContent = 'Stock guardado';
+    let msg = 'Stock guardado';
+    try { const data = await r.json(); if (!r.ok) return alert('Error: ' + (data.error || r.status)); if (typeof data.updated !== 'undefined') msg = 'Actualizados: ' + data.updated; }
+    catch(_) { if (!r.ok) return alert('Error: ' + r.status); }
+    alert(msg);
+    dirtyStock = {}; dirtyStockBySize = {}; document.getElementById('status').textContent = 'Stock guardado';
   };
 
   // === Photo editor ===
