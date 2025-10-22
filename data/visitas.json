@@ -1,8 +1,10 @@
 {
   "_lastCommitDay": null,
   "2025-10-22": {
-    "home": 2,
+    "home": 4,
     "producto_8": 1,
-    "checkout": 3
+    "checkout": 6,
+    "about": 2,
+    "producto_7": 1
   }
 }
