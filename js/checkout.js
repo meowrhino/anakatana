@@ -181,7 +181,9 @@
         // Preparar datos del carrito para Stripe con precio unitario ya ajustado si NL aplica
         const discountFactor = isNLEnabled() ? (1 - NL_RATE) : 1;
         const carritoStripe = carrito.map((item) => ({
+          id: item.id,
           nombre: item.nombre,
+          talla: item.talla || null,
           precio: Number((item.precio * discountFactor).toFixed(2)),
           cantidad: item.cantidad,
         }));
@@ -212,8 +214,26 @@
               }),
             }
           );
+          if (!response.ok) {
+            let err = {};
+            try { err = await response.json(); } catch(_) {}
+            if (err && err.sinStock && Array.isArray(err.sinStock) && err.sinStock.length) {
+              const msg = err.sinStock.map(s =>
+                s.talla
+                  ? `Producto ${s.id}, talla ${s.talla} (disp ${s.disponible}, ped ${s.solicitado ?? '?'})`
+                  : `Producto ${s.id} (disp ${s.disponible}, ped ${s.solicitado ?? '?'})`
+              ).join('\n');
+              alert("No hay stock suficiente en:\n" + msg);
+            } else {
+              alert("No se pudo crear la sesión de pago. Revisa tu carrito e inténtalo de nuevo.");
+            }
+            return; // abortar flujo: no hay sessionId
+          }
           const data = await response.json();
-
+          if (!data || !data.sessionId) {
+            alert("No se obtuvo sessionId de Stripe. Intenta de nuevo.");
+            return;
+          }
           // 2️⃣ Guardamos un registro local para “gracias.js”
           // Preparar datos para registro: solo talla por ítem y cálculo de precios en hora local
           const carritoRecord = carrito.map((item) => ({
