@@ -138,6 +138,10 @@ function validateCarritoCheckout(carrito) {
     const qty = Number(it.cantidad);
     if (!Number.isInteger(qty) || qty <= 0)
       errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
+    // Si el front envía talla, validar que no llegue vacía (opcional)
+    if ("talla" in it && String(it.talla).trim().length === 0) {
+      errors.push(`item[${idx}].talla no puede ser vacía si se envía`);
+    }
   });
   return { ok: errors.length === 0, errors };
 }
@@ -172,7 +176,7 @@ function leerJSONSeguro(p, fallback) {
 const leerNewsletter = () => leerJSONSeguro(newsletterPath, { suscritos: [] });
 const guardarNewsletter = (obj) => fs.writeFileSync(newsletterPath, JSON.stringify(obj, null, 2), "utf-8");
 
-const leerVisitas = () => leerJSONSeguro(visitasPath, {});
+const leerVisitas = () => leerJSONSeguro(visitasPath, { _lastCommitDay: null });
 const guardarVisitas = (obj) => fs.writeFileSync(visitasPath, JSON.stringify(obj, null, 2), "utf-8");
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -186,57 +190,7 @@ app.get("/productos", (_req, res) => {
   res.json(productos);
 });
 
-/**
- * POST /pedido — descuenta stock del JSON si hay unidades suficientes.
- * Body esperado: { carrito: [{ id, cantidad }, ...] }
- */
-app.post("/pedido", (req, res) => {
-  const { carrito } = req.body;
-  const check = validateCarritoStock(carrito);
-  if (!check.ok) {
-    return res
-      .status(400)
-      .json({ error: "Payload inválido", detalle: check.errors });
-  }
-
-  const productos = leerProductos();
-  const sinStock = [];
-
-  carrito.forEach((item) => {
-    const qty = Number(item.cantidad);
-    const producto = productos.find((p) => p.id === item.id);
-    if (producto) {
-      if (Number.isFinite(producto.stock) && producto.stock >= qty) {
-        producto.stock -= qty;
-      } else {
-        sinStock.push({
-          id: producto.id,
-          disponible: Math.max(0, Number(producto.stock) || 0),
-        });
-      }
-    }
-  });
-
-  if (sinStock.length > 0) {
-    return res
-      .status(400)
-      .json({
-        error: "Algunos productos no tienen suficiente stock",
-        sinStock,
-      });
-  }
-
-  try {
-    guardarProductos(productos);
-    return res.json({
-      success: true,
-      mensaje: "Pedido registrado y stock actualizado",
-    });
-  } catch (e) {
-    console.error("Error guardando productos:", e);
-    return res.status(500).json({ error: "Error guardando stock" });
-  }
-});
+// app.post("/pedido") - Eliminado por ser código redundante. La lógica principal se maneja en /guardar-carrito.
 
 /**
  * POST /editar-stock — actualiza el stock de un producto concreto.
@@ -278,8 +232,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // GitHub: para subir el registro.json al repositorio
 const { Octokit } = require("@octokit/rest");
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-if (!process.env.GITHUB_TOKEN) {
+const octokit = new Octokit({ auth: process.env.GH_TOKEN || process.env.GITHUB_TOKEN });
+if (!process.env.GH_TOKEN && !process.env.GITHUB_TOKEN) {
   console.warn(
     "⚠️ GITHUB_TOKEN no está definido. Subida a GitHub puede fallar."
   );
@@ -335,6 +289,52 @@ app.post("/crear-sesion", async (req, res) => {
     return res
       .status(400)
       .json({ error: "Payload inválido", detalle: check.errors });
+  }
+
+  // Pre-verificación de stock
+  const productos = leerProductos();
+  const sinStock = [];
+
+  for (const item of carrito) {
+    const producto = productos.find((p) => p.id === item.id);
+    if (!producto) {
+      sinStock.push({ id: item.id, disponible: 0, mensaje: "Producto no encontrado" });
+      continue;
+    }
+
+    const cantidadSolicitada = Number(item.cantidad);
+    if (producto.stockByTalla) {
+      // Normaliza talla: acepta "talla 41" y "41"
+      const m = String(item.talla || "").match(/talla\s+(.+)$/i);
+      const tallaSolicitada = (m ? m[1] : item.talla || "").toString().trim();
+      if (!tallaSolicitada) {
+        sinStock.push({ id: item.id, mensaje: "Talla requerida" });
+      } else {
+        const stockTalla = Number((producto.stockByTalla[tallaSolicitada]) || 0);
+        if (stockTalla < cantidadSolicitada) {
+          sinStock.push({
+            id: item.id,
+            talla: tallaSolicitada,
+            disponible: stockTalla,
+            mensaje: `Stock insuficiente para la talla ${tallaSolicitada}`,
+          });
+        }
+      }
+    } else if (producto.stock < cantidadSolicitada) {
+      // Si no tiene stock por talla, verificar stock general
+      sinStock.push({
+        id: item.id,
+        disponible: producto.stock,
+        mensaje: "Stock insuficiente",
+      });
+    }
+  }
+
+  if (sinStock.length > 0) {
+    return res.status(400).json({
+      error: "Algunos productos no tienen suficiente stock o no están disponibles",
+      sinStock,
+    });
   }
 
   // Valida envio/comision
@@ -507,7 +507,7 @@ app.get("/historial", (_req, res) => {
 app.get("/newsletter/:email", (req, res) => {
   const email = String(req.params.email || "").trim().toLowerCase();
   if (!email) return res.status(400).json({ error: "email requerido" });
-  const { suscritos } = leerNewsletter();
+  const { suscritos } = newsletterCache;
   return res.json({ suscrito: suscritos.includes(email) });
 });
 
@@ -519,21 +519,14 @@ app.post("/newsletter", async (req, res) => {
       return res.status(400).json({ error: "email inválido" });
     }
 
-    const data = leerNewsletter();
+    const data = newsletterCache;
     const yaEstaba = data.suscritos.includes(email);
     if (!yaEstaba) {
       data.suscritos.push(email);
       try { guardarNewsletter(data); } catch (e) { console.error("Error guardando newsletter.json local:", e); }
-      const body = JSON.stringify(data, null, 2);
-      try {
-        await upsertFileOnGitHub(
-          "data/newsletter.json",
-          body,
-          `chore: newsletter add ${email} (${new Date().toISOString()})`
-        );
-      } catch (e) {
-        console.error("GitHub upsert newsletter.json falló:", e.message || e);
-      }
+      newsletterCache = data;
+      newsletterChanged = true;
+      // No commitear a GitHub inmediatamente, se hará al cerrar el servidor si hay cambios pendientes.
       return res.status(201).json({ ok: true, new: true, email, total: data.suscritos.length });
     }
 
@@ -550,21 +543,14 @@ app.delete("/newsletter/:email", async (req, res) => {
   const email = String(req.params.email || "").trim().toLowerCase();
   if (!email) return res.status(400).json({ error: "email requerido" });
   try {
-    const data = leerNewsletter();
+    const data = newsletterCache;
     const idx = data.suscritos.indexOf(email);
     if (idx !== -1) {
       data.suscritos.splice(idx, 1);
+      newsletterCache = data;
+      newsletterChanged = true;
       try { guardarNewsletter(data); } catch (e) { console.error("Error guardando newsletter.json local:", e); }
-      const body = JSON.stringify(data, null, 2);
-      try {
-        await upsertFileOnGitHub(
-          "data/newsletter.json",
-          body,
-          `chore: newsletter remove ${email} (${new Date().toISOString()})`
-        );
-      } catch (e) {
-        console.error("GitHub upsert newsletter.json falló:", e.message || e);
-      }
+      // No commitear a GitHub inmediatamente, se hará al cerrar el servidor si hay cambios pendientes.
     }
   } catch (e) {
     console.error("/newsletter delete error:", e);
@@ -572,7 +558,87 @@ app.delete("/newsletter/:email", async (req, res) => {
   return res.sendStatus(204);
 });
 
-// ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+// ─── NEWSLETTER (commit diferido) ─────────────────────────────────────────────
+
+
+    // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+
+    // Variables de cache y estado para visitas
+    let visitasCache = leerVisitas();
+    let lastCommitDay = visitasCache._lastCommitDay;
+
+    // Variables de cache y estado para newsletter
+    let newsletterCache = leerNewsletter();
+    let newsletterChanged = false;
+
+    async function commitNewsletter() {
+      if (!newsletterChanged) return;
+      const body = JSON.stringify(newsletterCache, null, 2);
+      try {
+        await upsertFileOnGitHub(
+          "data/newsletter.json",
+          body,
+          `chore: newsletter update (${new Date().toISOString()})`
+        );
+        newsletterChanged = false;
+        console.log(`✅ Newsletter commiteada.`);
+      } catch (e) {
+        console.error("GitHub upsert newsletter.json falló:", e.message || e);
+      }
+    }
+
+    function getTodayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    async function commitVisitas(dayToCommit) {
+      if (!dayToCommit || !visitasCache[dayToCommit]) return;
+      const body = JSON.stringify(visitasCache, null, 2);
+      try {
+        await upsertFileOnGitHub(
+          "data/visitas.json",
+          body,
+          `chore: visitas resumen ${dayToCommit} (${new Date().toISOString()})`
+        );
+        visitasCache._lastCommitDay = dayToCommit;
+        guardarVisitas(visitasCache);
+        console.log(`✅ Visitas del día ${dayToCommit} commiteadas.`);
+      } catch (e) {
+        console.error("GitHub upsert visitas.json falló:", e.message || e);
+      }
+    }
+
+
+
+    // Función para manejar el cierre del servidor y commitear visitas pendientes
+    process.on("SIGTERM", async () => {
+      console.log("SIGTERM recibido. Commiteando visitas pendientes...");
+      clearInterval(visitasInterval);
+      const today = getTodayISO();
+      if (visitasCache[today] && visitasCache._lastCommitDay !== today) {
+        await commitVisitas(today);
+      }
+      if (newsletterChanged) {
+        await commitNewsletter();
+      }
+      process.exit(0);
+    });
+
+    // Flush periódico de visitas (cada 10 minutos)
+    const visitasInterval = setInterval(async () => {
+      const today = getTodayISO();
+      // Si hay visitas del día anterior pendientes de commit
+      if (lastCommitDay && today !== lastCommitDay) {
+        await commitVisitas(lastCommitDay);
+        lastCommitDay = today; // Actualizar la variable local lastCommitDay para el nuevo día
+      }
+      // Si hay visitas del día actual pendientes de commit y no se han commiteado hoy
+      if (visitasCache[today] && visitasCache._lastCommitDay !== today) {
+        await commitVisitas(today);
+      }
+    }, 10 * 60 * 1000); // 10 minutos
+
+    
 // POST /visitas  body: {clave: "home" | "producto_T02" | ...}
 app.post("/visitas", async (req, res) => {
   try {
@@ -580,21 +646,25 @@ app.post("/visitas", async (req, res) => {
     if (!clave) return res.status(400).json({ error: "clave requerida" });
     clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
 
-    const v = leerVisitas();
-    v[clave] = (v[clave] || 0) + 1;
-    try { guardarVisitas(v); } catch (e) { console.error("Error guardando visitas.json local:", e); }
+    const today = getTodayISO();
 
-    // Subir a GitHub para reflejar en el repo (cap opcional de tamaño si lo añades en el futuro)
-    const body = JSON.stringify(v, null, 2);
-    try {
-      await upsertFileOnGitHub(
-        "data/visitas.json",
-        body,
-        `chore: visitas ${clave} (+1) (${new Date().toISOString()})`
-      );
-    } catch (e) {
-      console.error("GitHub upsert visitas.json falló:", e.message || e);
+    if (lastCommitDay && today !== lastCommitDay) {
+      // Si es un nuevo día, commitear las visitas del día anterior
+      await commitVisitas(lastCommitDay);
+      lastCommitDay = today; // Actualizar la variable local lastCommitDay para el nuevo día
+      // Reiniciar el cache para el nuevo día si no se hizo commit antes
+      if (!visitasCache[today]) {
+        // visitasCache = { _lastCommitDay: today }; // <-- eliminado
+      }
     }
+
+    visitasCache[today] ||= {};
+    visitasCache[today][clave] = (visitasCache[today][clave] || 0) + 1;
+    // visitasCache._lastCommitDay = today; // <-- eliminado
+    // visitasCache._lastCommitDay = today; // No se actualiza aquí, solo cuando se hace un commit real
+
+    try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
+    // No commitear a GitHub inmediatamente, se hará al cambiar el día o al cerrar el servidor.
 
     // 204 No Content es suficiente para el front; si prefieres JSON, cambia a 200 con payload
     return res.sendStatus(204);
@@ -606,7 +676,7 @@ app.post("/visitas", async (req, res) => {
 
 // GET /visitas -> objeto completo (opcionalment se puede proteger)
 app.get("/visitas", (_req, res) => {
-  res.json(leerVisitas());
+  res.json(visitasCache);
 });
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -649,10 +719,11 @@ async function _withPathLock(pathInRepo, fn) {
 }
 
 async function upsertFileOnGitHub(pathInRepo, contentString, message) {
-  if (!process.env.GITHUB_TOKEN) return null;
+  const GHTOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+  if (!GHTOKEN) return null;
   const owner = "meowrhino";
   const repo = "anakatana";
-  const gh = new Octokit({ auth: process.env.GITHUB_TOKEN });
+  const gh = new Octokit({ auth: GHTOKEN });
 
   return _withPathLock(pathInRepo, async () => {
     const contentB64 = Buffer.from(contentString).toString("base64");

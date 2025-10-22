@@ -1,0 +1,193 @@
+Revisión del Funcionamiento y Mejoras Propuestas
+
+Funcionamiento Actual de la Página (Ana Katana)
+
+La página de Ana Katana se compone de un front-end estático (hosteado en GitHub Pages bajo la ruta /anakatana) y un backend en Node/Express desplegado en Render. A continuación se resume cómo funciona actualmente cada parte y las funciones clave que se ejecutan:
+	•	Front-end estático (GitHub Pages): Incluye páginas como index.html (home), producto.html (detalle de producto), checkout.html (pago), gracias.html (confirmación) y sorry.html (error en compra). Estas páginas cargan varios scripts (js/app.js, js/home.js, js/producto.js, js/checkout.js, etc.) que manejan la interacción de usuario. Por ejemplo:
+	•	app.js define la constante API_BASE apuntando al backend de Render (https://anakatana-backend.onrender.com). Esto se usa para hacer llamadas AJAX al servidor.
+	•	Los scripts gestionan el carrito de compra usando localStorage y actualizan la interfaz (añadir/quitar productos, calcular totales, etc.).
+	•	En checkout.html, el script checkout.js recopila los datos del formulario de checkout (productos del carrito, dirección, email, etc.). Luego hace una llamada POST a la API (/crear-sesion) para crear una sesión de pago de Stripe. Si el usuario marcó la casilla de newsletter, también se envía su email a la API (POST /newsletter) para suscribirlo.
+	•	Tras crear la sesión de Stripe, el usuario es redirigido a la pasarela de pago. Stripe está configurado con URLs de éxito y cancelación que apuntan de nuevo al front (por ejemplo, éxito: .../gracias.html, cancel: .../checkout.html). Estas URLs usan la constante FRONTEND_URL definida en el backend (por defecto https://meowrhino.github.io/anakatana según el código) para asegurar la redirección correcta al front-end.
+	•	Al cargar la página de gracias (gracias.html) después de un pago exitoso, el script gracias.js probablemente limpia el carrito (localStorage) e informa al usuario de la confirmación. Importante: aquí también se completa el registro del pedido vía backend.
+	•	Backend (Node/Express en Render): Implementado en el archivo data/index.js del proyecto. Sus responsabilidades incluyen:
+	•	API de catálogo y stock: endpoint GET /productos devuelve la lista completa de productos desde data/productos.json. El backend carga este JSON al iniciar o cuando se solicita. También hay endpoints administrativos para editar stock o productos (POST /admin/...) protegidos con adminAuth.
+	•	Sesiones de pago (Stripe): endpoint POST /crear-sesion recibe el carrito y datos de envío, verifica que el payload sea válido y utiliza la librería Stripe para crear una Checkout Session. Incluye la URL de éxito (gracias.html) y cancelación (checkout.html). Devuelve la URL o ID de sesión de Stripe al front-end.
+	•	Registro de compras (pedidos): Aquí el flujo es el siguiente:
+	1.	Guardado de pedido antes/después del pago: Existe un endpoint POST /guardar-carrito que recibe un nuevoRegistro (todos los datos de la compra: carrito con productos, importe total, datos de cliente, etc.). Según el código, este endpoint:
+	•	Lee el historial existente de data/registro.json (si existe) y añade el nuevo registro al array.
+	•	Actualiza el stock de los productos comprados. Esto se hace item por item: por cada producto en el carrito se busca en la lista de productos y se descuenta la cantidad comprada. Si el producto tiene tallas (stockByTalla), descuenta de la talla específica y recalcula el stock global sumando las tallas restantes. Si no tiene tallas, descuenta directamente del stock global. Al final, se guarda el JSON de productos actualizado con guardarProductos() para persistir el nuevo stock.
+	•	Guarda el historial actualizado en registro.json y sube los cambios a GitHub (repositorio) usando la función subirRegistroAGitHub (que utiliza la API de GitHub vía Octokit). Esto crea un commit nuevo en el repo con el archivo registro.json actualizado.
+	•	Responde al cliente con status 200 OK si todo fue bien.
+Es probable que POST /guardar-carrito se invoque después de confirmar el pago (posiblemente Stripe redirige a gracias.html con algún identificador, y el front-end entonces envía los datos finales al backend). No se observa en el código una verificación directa de Stripe en este punto, por lo que se asume que el flujo confía en que si el usuario llegó a la página de gracias, el pago fue exitoso.
+	2.	Endpoint /pedido: Existe también POST /pedido con lógica para verificar stock y descontarlo, muy parecido a lo anterior pero sin manejar tallas. Pareciera un método más antiguo o alternativo. Actualmente, el proceso principal de registro de compra ocurre en /guardar-carrito, que sí maneja tallas y sube el registro a GitHub. Por lo tanto, POST /pedido podría no estar en uso en la integración final (quizá quedó de una versión previa donde se reservaba stock antes de Stripe). Conviene revisar si realmente se llama; de no usarse, podría limpiarse para evitar confusión.
+	•	Newsletter: El backend mantiene un JSON data/newsletter.json con una lista de emails suscritos. Ofrece:
+	•	GET /newsletter/:email que responde con { suscrito: true/false } indicando si ese email ya está en la lista. El front-end checkout.js usa esto para pre-marcar la casilla si el usuario ya estaba suscrito (guarda también nl_email en localStorage).
+	•	POST /newsletter para suscribir un email nuevo. Valida formato de email y, si no estaba suscrito, lo agrega a la lista en memoria. Luego guarda el JSON en disco (guardarNewsletter) y realiza un commit a GitHub inmediato usando upsertFileOnGitHub("data/newsletter.json", ...) con un mensaje tipo “chore: newsletter add email…”. Si el email ya estaba suscrito, simplemente responde { ok: true, new: false } sin duplicarlo.
+	•	DELETE /newsletter/:email para darse de baja. Quita el email de la lista si existe y igualmente actualiza el JSON local y sube el cambio a GitHub con commit “chore: newsletter remove email…”. Este endpoint responde 204 No Content incluso si el email no estaba (idempotencia).
+	•	Tracking de visitas: Se lleva un registro de visitas por página en data/visitas.json. El backend provee:
+	•	POST /visitas espera un cuerpo JSON { clave: "nombre_pagina" }. Incrementa en +1 el contador para esa página (ej. "home", "producto_8", "checkout", etc.) usando leerVisitas() y guardarVisitas() para persistir localmente. Luego, igual que con la newsletter, sube la actualización a GitHub inmediatamente con upsertFileOnGitHub("data/visitas.json", ...), commiteando un mensaje tipo “chore: visitas producto_8 (+1) (…fecha…)”. Finalmente responde 204 No Content.
+	•	GET /visitas devuelve el contenido completo de visitas.json (todas las páginas y contadores) en formato JSON. Actualmente no está protegido ni paginado, pero probablemente es sólo para monitoreo interno.
+	•	Integración con GitHub (persistencia): Para las funciones anteriores, se usa una función común upsertFileOnGitHub(path, content, message) definida en el código. Esta función:
+	•	Utiliza un mutex interno _ghLocks para serializar actualizaciones concurrentes al mismo archivo (para evitar condiciones de carrera si dos peticiones intentan commitear casi al mismo tiempo).
+	•	Siempre obtiene el SHA más reciente del archivo en GitHub (octokit.repos.getContent) antes de intentar actualizarlo, y en caso de conflicto (status 409) reintenta hasta 3 veces con pequeños delays exponenciales.
+	•	Llama a la API de GitHub para crear o actualizar el archivo (octokit.repos.createOrUpdateFileContents) con el contenido nuevo en Base64. Si no existía antes, lo crea; si sí, usa el SHA para actualizar. Cada llamada genera un commit con el mensaje proporcionado.
+	•	Nota: Esta estrategia persiste datos en el repositorio (que actúa como “base de datos” simplificada) y asegura que GitHub Pages refleje algunos datos (ej: productos.json actualizado para que el front end estático siempre tenga la info más reciente de stock y catálogo). De hecho, después de cada cambio de stock vía admin se hace upsertFileOnGitHub("data/productos.json", ...) para actualizar GitHub Pages. Sin embargo, nótese que no se sube productos.json cuando se descuenta stock por una venta normal (en /guardar-carrito se guarda local pero no se comitea ese cambio). Esto significa que el JSON en GitHub Pages podría quedarse desactualizado tras ventas, a menos que un administrador sincronice. Si el front-end utiliza siempre la API (GET /productos) para obtener stock en tiempo real, no habrá problema funcional; pero si en algún lugar usa directamente el JSON estático de GitHub, podría mostrar stock desfasado. Sería recomendable al menos documentar esto o incluso subir los cambios de stock de ventas al repo también, si se desea consistencia total en GitHub Pages (con el costo de más commits).
+	•	Página de error de compra (sorry.html): Esta página se muestra cuando algo falla en el proceso de checkout (por ejemplo, si Stripe cancela o hay un error técnico). Tiene un botón o enlace “Volver al checkout”. Aquí se identificó un bug: el enlace está apuntando a "/checkout.html", lo que en el entorno actual no lleva a ningún sitio cuando el front-end está bajo /anakatana/. Por ejemplo, en GitHub Pages la URL correcta debería ser /anakatana/checkout.html. Debido a ese path incorrecto, al hacer clic no sucede nada (o lleva a una ruta inválida). Este fallo ocurre especialmente en entornos donde no hay un dominio raíz asignado a la web (ej. usando la URL de usuario de GitHub Pages o un dominio relativo).
+
+En resumen, el funcionamiento actual cubre todo el flujo: visualización de productos, gestión de carrito, checkout con Stripe, registro del pedido, actualización de stock, suscripción a newsletter y tracking de visitas. Toda la información dinámica (stock, visitas, newsletter, pedidos) se guarda en archivos JSON y se versiona vía GitHub para persistirla. Esto hace que cada evento (visita, suscripción, compra) termine generando un commit en el repositorio remoto.
+
+Bug del Enlace en sorry.html (Volver al Checkout)
+
+Un problema puntual encontrado es el del enlace roto en la página de error (sorry.html). Como se mencionó, el código HTML usa una ruta absoluta incorrecta:
+
+<!-- Extracto de sorry.html -->
+<a href="/checkout.html" class="boton-volver">volver al checkout</a>
+
+Al estar el sitio alojado bajo un subdirectorio (/anakatana/), esa ruta absoluta apunta al lugar equivocado. Solución propuesta: cambiar el enlace para que sea relativo o apunte correctamente a la página de checkout. Por ejemplo, usar href="checkout.html" (ruta relativa desde la ubicación de sorry.html) o incluir el subdirectorio: href="/anakatana/checkout.html". Usar rutas relativas es preferible en sitios alojados en subcarpetas, así funcionará tanto en desarrollo local como en producción con o sin dominio propio. Tras este cambio, el botón “Volver al checkout” redirigirá correctamente a la página de checkout, evitando confusión al usuario cuando algo falla en la compra.
+
+Seguimiento de Visitas y Newsletter: Mejora de Frecuencia de Commits
+
+Actualmente, cada vez que un usuario visita una página o se suscribe/cancela la newsletter, el backend actualiza el JSON correspondiente y realiza inmediatamente un commit al repositorio. Esto garantiza que no se pierda ninguna visita o email, pero conlleva muchos commits frecuentes. Algunos puntos a considerar:
+	•	Commits muy frecuentes: Cada página vista genera un commit “chore: visitas …”. Si el tráfico aumenta, el historial de commits se llenará de mensajes de visitas y podría acercarse a límites de la API de GitHub (tasa de solicitudes) o simplemente dificultar el seguimiento de cambios importantes. Igualmente, cada alta/baja de newsletter genera su commit propio.
+	•	Costo de performance: Aunque los JSON son pequeños, cada commit implica llamadas a la API de GitHub (lectura de SHA y escritura). La función upsertFileOnGitHub implementa reintentos con backoff para robustez, pero eso significa múltiples requests en caso de conflicto. Render parece ejecutar el backend en un solo contenedor, y además se serializan las actualizaciones por archivo con _ghLocks, por lo que no debería haber colisiones a nivel de dos commits concurrentes sobre el mismo fichero. Si dos usuarios casi simultáneos generan visitas, la segunda actualización esperará a que termine la primera (gracias al mutex) y luego obtendrá el SHA nuevo y hará el commit. Esto previene errores de push “non-fast-forward” y la lógica de reintento por 409 seguramente ni se dispara en la práctica dada la exclusión mutua. En otras palabras, la preocupación de colisión está mitigada por el código actual. Mientras se mantenga una única instancia del servidor, no habrá dos procesos concurrentes en diferentes máquinas; si en un futuro hubiera múltiples instancias (escalado horizontal), ese mutex ya no sincronizaría entre servidores, pero ese es otro nivel de complejidad. Por ahora, con una instancia, las actualizaciones a GitHub son atómicas por diseño.
+	•	Sesiones en Render: El usuario mencionó que “cada vez que alguien abre la página hace una sesión en Render”. En realidad, Render mantiene un proceso del servidor Express corriendo (lo levanta con app.listen). No es que cada visitante lance una instancia nueva, sino que todos comparten la misma a menos que el servicio haga scaling o se reinicie por inactividad (en free tier puede “dormir” y despertar con la siguiente visita). Por tanto, no hay un evento claro de “cierre de sesión” por usuario en el backend. Sí existe el concepto de apagar el contenedor tras un período de inactividad; Render enviaría una señal (SIGTERM) cuando va a detener la instancia. Podríamos enganchar ese evento si quisiéramos hacer algo al terminar la sesión global del servidor.
+
+Dadas estas observaciones, ¿cómo podemos mejorar el tracking para reducir commits y agruparlos por día? Varias ideas:
+	1.	Agrupar visitas por día en el JSON: En lugar de un objeto plano con contadores totales, podríamos estructurar visitas.json por fecha. Ejemplo:
+
+{
+  "2025-10-20": { "home": 10, "producto_1": 3, "checkout": 2, ... },
+  "2025-10-21": { ... }
+}
+
+De este modo, se registra separado por día. Esto facilita, por un lado, análisis diario y, por otro, la posibilidad de commitear con menos frecuencia. Por ejemplo, podríamos decidir commitear sólo una vez al día el resumen del día anterior. El backend podría acumular visitas en memoria o en un fichero temporal durante el día y al llegar medianoche (o en la primera visita del día siguiente) escribir al JSON consolidado y hacer un commit único con todas las visitas del día.
+Implementación: Se puede programar un setInterval que cada noche a las 00:00 escriba/commitee, o más sencillo, guardar la última fecha procesada. Cada vez que POST /visitas es llamado, verificar la fecha actual vs la última fecha guardada:
+	•	Si es un nuevo día, significa que las visitas del día anterior ya no van a cambiar; en ese momento cargar visitas.json, agregar el objeto del día anterior (o si ya está agregado, no tocarlo), y opcionalmente hacer commit de cierre para el día anterior.
+	•	Luego seguir contando para el día actual en una estructura en memoria, evitando commitear cada incremento.
+Finalmente, al terminar el día, se vuelven a volcar. Desventaja: si el proceso se reinicia o cae antes de commitear, se podrían perder los datos en memoria. Para mitigarlo, en vez de sólo memoria se puede ir almacenando en el JSON local pero marcando que no ha sido commiteado todavía (por ejemplo, mantener un campo “dirty” o simplemente no subir hasta que toque).
+
+	2.	Commit por lote en cada sesión de backend: Dado que Render puede apagar el servicio por inactividad, podríamos intentar utilizar ese momento para subir los datos. Por ejemplo, atrapar el evento SIGTERM en Node (usando process.on("SIGTERM", ...)) y dentro de ese handler, realizar los commits pendientes (visitas, newsletter). Esto actuaría como flush final. Sin embargo, esto tiene complicaciones:
+	•	Render da un tiempo limitado para que la app termine (graceful shutdown), habría que asegurarse de hacer las peticiones a GitHub rápidamente.
+	•	Si el servicio es muy activo y no se apaga nunca, entonces estaríamos acumulando indefinidamente sin commitear (no ideal).
+	•	También, si hay varios apagados por día, haría commits múltiples, perdiendo la ventaja de uno por día. En general, confiar en el shutdown event no es tan predecible.
+	3.	Thresholds o intervalos de tiempo: Otra opción es commits periódicos o por umbral. Por ejemplo, commitear visitas cada 100 visitas registradas, o bien cada X horas. Una estrategia sencilla:
+	•	Mantener un contador de visitas acumuladas desde el último commit (p.ej. variable global visitasNoCommiteadas).
+	•	Cada vez que llega un POST /visitas, se incrementa localmente y se guarda en visitas.json. Pero solo llamar a upsertFileOnGitHub si:
+	•	Han pasado, digamos, 60 minutos desde el último commit o
+	•	Se han acumulado N visitas (p.ej. 50) sin subir.
+	•	Mientras no se cumpla, simplemente no se hace nada con GitHub (los datos quedan localmente en el JSON del servidor, que persiste en disco mientras la instancia viva).
+	•	Cuando se cumple el criterio, se suben todas las visitas de golpe. El commit podría incluir en el mensaje algo como “update visitas 20 visitas en últimas 2h”.
+	•	Problema a considerar: el servidor de Render usa almacenamiento efímero (no garantizado a largo plazo a menos que montes un volumen permanente). Si la instancia se reinicia por despliegue o crash antes de subir, se pierde lo no subido. En la práctica, si el commit se difiere por horas, hay un pequeño riesgo de pérdida de esos hits si ocurre un reinicio. Si es aceptable perder alguna visita en casos raros, esta estrategia reduce drásticamente commits. Si no es aceptable, entonces hay que subir con más frecuencia o tener un mecanismo de respaldo (por ejemplo, guardar en una base de datos externa o en Redis temporalmente, pero eso ya complica la arquitectura).
+	•	Para la newsletter, la frecuencia de cambios es baja (no se suscribe tanta gente tan seguido), así que tal vez no es crítico agrupar. Aun así, podrías decidir que agregar varios emails el mismo día haga un solo commit: en lugar de commit inmediato al suscribir, marcar en memoria y subir al cabo de unos minutos o cuando se cierre algún evento. Pero dado que newsletter requiere saber inmediatamente si un email está suscrito (y eso se basa en el JSON local), igualmente funciona sin subir de inmediato, siempre que el backend retenga el cambio. Recomendación: En newsletter quizás está bien dejar commit inmediato, ya que no habrá cientos de cambios por día normalmente. El foco de reducción son las visitas, que sí son muy frecuentes.
+	4.	Usar una base de datos o servicio analítico externo: Esto es un camino más complejo pero por completitud lo menciono. En lugar de guardar visitas en GitHub, se podría usar un servicio de analytics (Google Analytics, Plausible, etc.) o un pequeño backend DB (por ejemplo, SQLite o un servicio como Supabase) para almacenar las visitas por día. Dado que ya existe la infraestructura de guardar en JSON, entiendo que se quiso mantener todo muy simple sin depender de DB. Así que las opciones 1-3 que optimizan el uso de GitHub son más coherentes con el planteamiento actual.
+
+Recomendación concreta: Implementar la agrupación diaria de visitas. Es decir, modificar visitas.json para que tenga secciones por fecha, y luego ajustar la lógica de POST /visitas:
+	•	La clave req.body.clave podría cambiar a incluir fecha, pero más fácil es que el servidor mismo añada la dimensión fecha.
+	•	Por ejemplo, al recibir una visita:
+
+const hoy = new Date().toISOString().slice(0,10); // "2025-10-20"
+const visitas = leerVisitas();
+if (!visitas[hoy]) visitas[hoy] = {};
+visitas[hoy][clave] = (visitas[hoy][clave] || 0) + 1;
+guardarVisitas(visitas);
+
+
+	•	Podríamos decidir subir solo si es la primera visita de un nuevo día (para cerrar el día anterior), o simplemente subir una vez al día. Quizá lo más sencillo: no commitear en cada visita, sino programar un cron diario. En Render se pueden usar cron jobs separados, pero también se puede hacer dentro del proceso con setTimeout calculando tiempo hasta medianoche. Cuando se dispare, se hace un commit con todas las visitas del día que terminó. Si Render no permite procesos de larga duración sin tráfico, el cron interno puede no ser fiable. En su defecto, la lógica de “primera visita del día = commitea ayer” podría servir:
+	•	Cuando llega una visita y detectas que hoy es distinto al último día presente en el JSON, significa que ayer quedó finalizado. Entonces antes de incrementar la de hoy, puedes subir a GitHub el JSON tal como está (que contendrá hasta ayer). Esto registraría las visitas de ayer en un commit consolidado.
+	•	Luego empiezas a contar las de hoy sin subir inmediatamente hasta que cambie el día de nuevo.
+
+Así se lograría aproximadamente 1 commit por día para visitas en vez de uno por vista. Es cierto que la primera visita del día fuerza un commit (con todo el día anterior), pero es un buen trade-off. Documenta en el mensaje que es resumen diario. Por ejemplo: “chore: visitas resumen 2025-10-20 (${totalVisitas} hits)”.
+
+Con esta modificación, se deberá monitorizar que el JSON de visitas no crezca muchísimo con el tiempo (cada día añade entradas). Quizá cada cierto tiempo archivar o limpiar días muy antiguos si no interesan.
+
+En conclusión, la página ya implementa una lógica sólida para evitar colisiones (lock por archivo) y maneja persistencia usando GitHub. Las mejoras clave serían reducir la frecuencia de commits agrupando actualizaciones, principalmente en el caso de las visitas. Esto mantendrá el repositorio más limpio y eficiente. El método de agrupar por día es viable y cumpliría con “que cada día abra una entrada” como sugirió el usuario, a la vez que permite un commit diario consolidado.
+
+Actualización de Stock por Tallas en la Compra
+
+El correcto manejo del stock por tallas era otra preocupación. Actualmente, el backend sí lo está haciendo en el endpoint /guardar-carrito. Repasemos ese fragmento de código relevante ya que es crucial:
+
+// En app.post("/guardar-carrito") dentro de index.js
+if (Array.isArray(nuevoRegistro?.carrito)) {
+  nuevoRegistro.carrito.forEach((it) => {
+    const id = Number(it.id);
+    const cant = Number(it.cantidad) || 0;
+    // ... busca el producto por id:
+    const p = productos.find(x => Number(x.id) === id);
+    if (!p) { console.warn("Producto no encontrado:", id); return; }
+
+    let tallaKey = null;
+    if (typeof it.talla === "string" && it.talla.trim()) {
+      const m = it.talla.match(/talla\s+(.+)$/i);
+      tallaKey = (m ? m[1] : it.talla).toString().trim();
+    }
+
+    if (tallaKey) {
+      // Descontar stock de la talla específica
+      p.stockByTalla = (p.stockByTalla && typeof p.stockByTalla === 'object') ? p.stockByTalla : {};
+      const k = String(tallaKey);
+      const prev = Number(p.stockByTalla[k] ?? 0);
+      p.stockByTalla[k] = Math.max(0, prev - cant);
+      // Recalcular stock global como suma de todas las tallas
+      const vals = Object.values(p.stockByTalla);
+      p.stock = vals.length ? vals.reduce((a, b) => a + Number(b || 0), 0) : Math.max(0, Number(p.stock)||0);
+    } else {
+      // Producto sin tallas: descontar stock global directamente
+      const prev = Number(p.stock) || 0;
+      p.stock = Math.max(0, prev - cant);
+    }
+  });
+  guardarProductos(productos);
+  console.log("✅ Stock actualizado tras compra (con tallas)");
+}
+
+Como vemos, la lógica:
+	•	Detecta si el item comprado tiene una propiedad talla (por ejemplo "talla 41" o "talla M"). Si sí, extrae la clave de talla (lo que venga después de la palabra “talla “ en el string, o el string completo si no sigue ese formato exacto).
+	•	Luego garantiza que p.stockByTalla exista como objeto y descuenta la cantidad comprada de esa talla específica (p.stockByTalla[k] -= cant, con tope mínimo 0).
+	•	Recalcula p.stock sumando todos los valores de stockByTalla (asumiendo que representan las existencias por talla). Esto es importante para que el stock global siempre refleje la suma correcta tras la venta. En caso de que stockByTalla quede vacío o no exista, p.stock se deja como estaba o al menos no negativo.
+	•	Si el producto no tiene talla (por ejemplo un producto sin variantes de tamaño), simplemente descuenta del p.stock global.
+	•	Finalmente guarda el JSON de productos con los nuevos valores de stock.
+
+Esto asegura que el stock por tallas se actualiza correctamente al completar la compra. Si antes había, digamos, { stockByTalla: { "41": 2, "42": 1 }, stock: 3 } y el cliente compra 1 unidad de la talla 42, tras la función quedará { stockByTalla: { "41": 2, "42": 0 }, stock: 2 }. Es decir, talla “42” reducida de 1 a 0, y el stock total ahora 2 (coincidiendo con solo las dos de talla 41 que quedan).
+
+Esta implementación cubre el punto que preocupaba de “actualizar stock por tallas al completar compra”. En la versión previa (posiblemente manejado en el front con gracias.js), esto podía no haberse contemplado bien, pero ahora está centralizado en el backend al guardar el registro de compra, lo cual es más seguro.
+
+Una sugerencia de mejora menor: Actualmente no se envía ninguna respuesta específica al cliente sobre stock en este paso (solo se hace console.log en el servidor). Si se quisiera, el backend podría incluir en la respuesta de /guardar-carrito información de que el stock se actualizó correctamente, o el nuevo stock de cada producto comprado, pero no es estrictamente necesario para la funcionalidad. El front realmente no lo usa en ese momento.
+
+Además, es importante verificar qué fuente de datos utiliza el front-end para mostrar stock:
+	•	En la página de producto, seguramente al cargar se muestra disponibilidad. Es probable que esa info provenga de la API GET /productos del backend (que ya reflejaría cualquier cambio de stock realizado). Si así es, entonces todo bien: después de una compra, futuras visitas al producto verán el stock disminuido porque el backend sirvió el JSON actualizado.
+	•	Si en cambio el front-end usara un JSON estático de GitHub Pages para poblar la tienda (por ejemplo, podría haber un script que cargue data/productos.json directamente del repositorio), entonces el stock no se actualizaría hasta que se haga commit de productos.json. Como notamos, la app actualmente solo sube productos.json en acciones de admin (stock-bulk o reemplazar productos). Sería recomendable considerar subir también productos.json tras cada compra. Sí, esto agregaría más commits (cada venta un commit extra), pero quizás valga la pena para evitar inconsistencias en la UI estática. Otra opción es asegurarse de que toda consulta de stock o catálogo en el front se haga contra la API del backend y no contra el archivo estático. Dado que existe GET /productos, probablemente ya esté usando la API (por ejemplo, home.js o producto.js podría estar haciendo fetch a /productos o a /producto/{id} si existiera). Revisando la estructura, parece que no hay endpoint específico por producto id, así que tal vez la web carga todo el catálogo y luego filtra por id para la página de detalle. Si hace eso vía backend, estaríamos bien.
+
+En resumen, el stock por tallas sí se descuenta correctamente en el backend cuando se registra el pedido. Esto mejora la consistencia de datos, ya que antes hacerlo en el front-end podía dar lugar a trampas (un usuario cerrando antes la página podría no ejecutar el script, etc.). Ahora está garantizado del lado servidor.
+
+Revisión General y Otras Consideraciones
+
+Además de los puntos centrales, se destacan algunos detalles finales y posibles mejoras adicionales en el proyecto:
+	•	Evitar código muerto o redundante: Identificamos que app.post("/pedido") en index.js realiza una lógica similar de descontar stock (aunque sin tallas) y responde “Pedido registrado”. Pero el flujo principal parece haber migrado a usar /guardar-carrito (que además guarda el registro y maneja tallas). Sería bueno confirmar si /pedido se usa en algún momento (quizá podría haberse usado para confirmar stock antes de crear la sesión de Stripe, pero actualmente en checkout.js no se ve que se llame). Si no se usa, convendría eliminarlo o comentarlo para no generar confusión. Mantener una única forma de registrar pedidos reduce riesgos de manejar stock en dos lugares distintos.
+	•	Validación de stock antes del pago: Relacionado con lo anterior, ¿qué pasa si dos usuarios intentan comprar el último par de zapatos (talla X) al mismo tiempo? Con el flujo actual:
+	•	Ambos podrían obtener la sesión de Stripe casi simultáneamente (no parece haber una reserva de stock antes del pago en el código actual, a menos que se llame a /pedido antes de crear la sesión, cosa que no vemos implementada).
+	•	Si ambos completan el pago, los dos pedidos llegarán al backend y se procesarán en /guardar-carrito. El primero en llegar descontará el stock de talla X de 1 a 0 y lo guardará. El segundo en llegar igualmente pasará por la lógica: prev sería 0 (porque el stock ya fue actualizado por el primero), y entonces pondrá Math.max(0, 0 - cant) = 0; no hay stock suficiente, pero el código no hace sinStock.push ni lanza error, simplemente deja 0. Esto implica que el segundo pedido también se guardará en registro y se considerará exitoso, a pesar de no haber stock real. En la práctica, esto significa que el negocio vendió una unidad de más de ese producto/talla.
+Este caso de sobreventa es raro pero posible bajo concurrencia. Para mitigarlo, se podría implementar una verificación de stock antes de crear la sesión de Stripe:
+	•	Por ejemplo, cuando el front-end hace POST /crear-sesion, el backend podría checar el carrito contra productos.json. Si detecta que algún item no tiene stock suficiente, en lugar de crear la sesión podría responder un error al front (y el front mostrar un mensaje “Lo sentimos, alguien acaba de comprar ese producto antes que tú”). Esto evitaría llegar al pago si no hay stock.
+	•	Stripe no conoce nuestro stock, así que la prevención debe ser de nuestro lado. Implementar esa comprobación en /crear-sesion (similar a lo que hace /pedido con validateCarritoStock) sería una mejora robusta. Actualmente, parece que /crear-sesion confía en que el front no pedirá más de lo disponible (el front seguramente impide seleccionar más de lo que stock indica). Pero como vimos, sin reserva, dos usuarios a la vez podían saltarse esa restricción.
+Alternativamente, una vez que reconozcamos este caso, se podría ajustar la lógica en /guardar-carrito: si prev - cant da negativo, en lugar de simplemente truncar a 0, podría añadir a un array sinStock y luego, similar a /pedido, abortar con error 400. Pero eso significaría que un pago completado de Stripe resultaría en un fallo al guardar el pedido – tendríamos que reembolsar o comunicar al cliente. Es un poco tarde en el flujo para abortar. Mejor evitarlo antes de cobrar.
+Recomendación: Añadir verificación de stock en /crear-sesion utilizando la misma función validateCarritoStock que ya existe. Si falla, no crear sesión y retornar un error manejable. Esto prácticamente elimina la posibilidad de doble venta. Dado el volumen, tal vez esto no sea crítico ahora, pero es una mejora a considerar para robustez.
+	•	Limpieza de la lógica deNewsletter en front-end: Veo que en checkout.js se hace:
+	•	Auto-check de newsletter con GET /newsletter/email y luego marcar checkbox si ya suscrito.
+	•	Suscribir en POST /newsletter si el checkbox está marcado al confirmar pedido.
+	•	También hay una parte que si el usuario desmarca la casilla (o anula sus datos), hace un DELETE /newsletter/email y borra localStorage.nl_email. Eso está muy bien para permitir anular suscripción directamente en el checkout.
+Todo esto parece consistente. Solo asegurarse de manejar bien errores silenciosamente (veo try { fetch(...newsletter...) } catch(_) {} donde se ignora error – para este caso no es grave, pero en general conviene al menos console.error para depurar si la petición falla).
+	•	Admin y seguridad: El adminAuth no lo vimos en detalle (posiblemente es algo sencillo como clave almacenada en variable de entorno o archivo). Dado que admin endpoints modifican datos sensibles, asegurarse de que adminAuth esté bien implementado (p.ej. usando una cabecera de API key o JWT). Y dado que admin pages existen (admin/index.html, etc.), esas páginas deben consumir la API con autenticación. Asumo que esas páginas no están públicas o requieren login. Es bueno revisarlo pero escapa a lo preguntado directamente.
+	•	Uso deGitHub Pages vs API: Decidir si los datos como productos, stock, visitas necesitan reflejarse en GitHub Pages. Actualmente:
+	•	Productos: se suben manualmente en admin actions. Podría automatizarse en cada venta, pero incrementa commits – es un trade-off entre consistencia estática vs spam de commits.
+	•	Visitas/Newsletter: se suben siempre. Podríamos marcarlos como “no es necesario para la web pública”, pero quizá el propietario quiere ver los JSON cambiar en el repo para monitorear fácilmente visitas y suscriptores sin meterse a la base de datos (dado que no hay panel admin específico para visitas, tenerlo en JSON legible es útil). Se podría a futuro crear un endpoint admin para visitas con auth, en vez de exponerlo públicamente en GH, pero no es crítico.
+Puesto que la tarea sugiere “tracking sea igual pero que cada día abra una entrada” entiendo que la preferencia es mantener el tracking en JSON/git (sin migrar a DB), solo hacerlo más eficiente temporalmente. Así lo hemos abordado.
+	•	Commits múltiples en paralelo: Como dijimos, el código actual ya maneja la concurrencia bastante bien con _ghLocks. Cuando dos commits distintos ocurren (por ejemplo uno a newsletter.json y otro a visitas.json al mismo tiempo), no se bloquean entre sí porque el lock es por archivo, y GitHub permite commits concurrentes a distintos archivos. No debería haber problema. Si hubiera dos al mismo archivo, se serializan. Y con reintento 3 veces, es muy seguro contra colisiones. Así que el “origin changed” del que se preocupaba el usuario está resuelto en la implementación actual. 👍
+
+Para finalizar, el estado del proyecto es bueno: cumple su funcionalidad de tienda online con pagos, persistencia de datos y panel admin. Las mejoras propuestas se centran en pulir detalles:
+	•	Corregir el enlace roto en sorry.html.
+	•	Mejorar la estrategia de commits del tracking de visitas (agrupación diaria o por sesión) para reducir ruido y posibles problemas de rendimiento.
+	•	Asegurar consistencia de stock y prevenir sobreventa añadiendo validación en el momento adecuado.
+	•	Opcionalmente, sincronizar los cambios de stock al front estático si se considera necesario, o sino delegar siempre al backend la obtención de esa información.
+	•	Limpiar código no utilizado y revisar manejo de errores menores.
+
+Implementando estos cambios, la página será más robusta y eficiente, evitando bugs menores como el mencionado y escalando mejor si aumenta el tráfico o las ventas. Cada uno de estos ajustes aporta estabilidad sin cambiar la arquitectura fundamental, la cual –basada en JSON + GitHub– ha demostrado ser sencilla pero efectiva para este proyecto. ¡Buen trabajo hasta ahora, y con estas mejoras quedará aún mejor!

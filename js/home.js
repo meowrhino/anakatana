@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", cargarProductos);
 
 async function cargarProductos() {
   // añadimos un parámetro único para evitar caché del navegador
-  const respuesta = await fetch(`data/productos.json?v=${Date.now()}`, {
-    cache: "no-store",
+  const respuesta = await fetch(`${window.API_BASE}/productos`, {
+
   });
   productosHome = await respuesta.json();
 
