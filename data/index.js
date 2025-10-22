@@ -466,6 +466,18 @@ app.post("/guardar-carrito", async (req, res) => {
   } catch (e) {
     console.error("❌ Error actualizando stock tras compra:", e);
   }
+  // Subir productos.json al repo tras la venta para sincronizar GitHub Pages y el repo
+  try {
+    const productosActualizados = leerProductos();
+    await upsertFileOnGitHub(
+      "data/productos.json",
+      JSON.stringify(productosActualizados, null, 2),
+      `chore(sale): sync productos tras compra ${nuevoRegistro.id || ""} (${new Date().toISOString()})`
+    );
+    console.log("✅ productos.json subido a GitHub tras la compra");
+  } catch (e) {
+    console.error("❌ No se pudo subir productos.json tras compra:", e);
+  }
   // === /Actualización stock ===
 
   // 3) Escribir el archivo actualizado + subir a GitHub
