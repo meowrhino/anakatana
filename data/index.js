@@ -138,7 +138,7 @@ function validateCarritoCheckout(carrito) {
     const qty = Number(it.cantidad);
     if (!Number.isInteger(qty) || qty <= 0)
       errors.push(`item[${idx}].cantidad debe ser entero ≥ 1`);
-    // Si el front envía talla, validar que no llegue vacía (opcional)
+    // Si el front envía talla, validar que venga con contenido (opcional)
     if ("talla" in it && String(it.talla).trim().length === 0) {
       errors.push(`item[${idx}].talla no puede ser vacía si se envía`);
     }
@@ -301,24 +301,22 @@ app.post("/crear-sesion", async (req, res) => {
       sinStock.push({ id: item.id, disponible: 0, mensaje: "Producto no encontrado" });
       continue;
     }
-
     const cantidadSolicitada = Number(item.cantidad);
     if (producto.stockByTalla) {
-      // Normaliza talla: acepta "talla 41" y "41"
       const m = String(item.talla || "").match(/talla\s+(.+)$/i);
       const tallaSolicitada = (m ? m[1] : item.talla || "").toString().trim();
       if (!tallaSolicitada) {
         sinStock.push({ id: item.id, mensaje: "Talla requerida" });
-      } else {
-        const stockTalla = Number((producto.stockByTalla[tallaSolicitada]) || 0);
-        if (stockTalla < cantidadSolicitada) {
-          sinStock.push({
-            id: item.id,
-            talla: tallaSolicitada,
-            disponible: stockTalla,
-            mensaje: `Stock insuficiente para la talla ${tallaSolicitada}`,
-          });
-        }
+        continue;
+      }
+      const stockTalla = Number((producto.stockByTalla[tallaSolicitada]) || 0);
+      if (stockTalla < cantidadSolicitada) {
+        sinStock.push({
+          id: item.id,
+          talla: tallaSolicitada,
+          disponible: stockTalla,
+          mensaje: `Stock insuficiente para la talla ${tallaSolicitada}`,
+        });
       }
     } else if (producto.stock < cantidadSolicitada) {
       // Si no tiene stock por talla, verificar stock general
@@ -459,8 +457,8 @@ app.post("/guardar-carrito", async (req, res) => {
           const prev = Number(p.stock) || 0;
           p.stock = Math.max(0, prev - cant);
         }
-      });
-      guardarProductos(productos);
+     }
+  });      guardarProductos(productos);
       console.log("✅ Stock actualizado tras compra (con tallas)");
     }
   } catch (e) {
@@ -612,8 +610,8 @@ app.delete("/newsletter/:email", async (req, res) => {
           body,
           `chore: visitas resumen ${dayToCommit} (${new Date().toISOString()})`
         );
-        visitasCache._lastCommitDay = dayToCommit;
-        guardarVisitas(visitasCache);
+      visitasCache._lastCommitDay = dayToCommit; // ← sólo aquí
+      guardarVisitas(visitasCache);
         console.log(`✅ Visitas del día ${dayToCommit} commiteadas.`);
       } catch (e) {
         console.error("GitHub upsert visitas.json falló:", e.message || e);
@@ -656,26 +654,17 @@ app.post("/visitas", async (req, res) => {
   try {
     let clave = String(req.body?.clave || "").trim();
     if (!clave) return res.status(400).json({ error: "clave requerida" });
-    clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
-
     const today = getTodayISO();
-
     if (lastCommitDay && today !== lastCommitDay) {
       // Si es un nuevo día, commitear las visitas del día anterior
       await commitVisitas(lastCommitDay);
       lastCommitDay = today; // Actualizar la variable local lastCommitDay para el nuevo día
-      // Reiniciar el cache para el nuevo día si no se hizo commit antes
-      if (!visitasCache[today]) {
-        // visitasCache = { _lastCommitDay: today }; // <-- eliminado
-      }
     }
 
     visitasCache[today] ||= {};
     visitasCache[today][clave] = (visitasCache[today][clave] || 0) + 1;
-    // visitasCache._lastCommitDay = today; // <-- eliminado
-    // visitasCache._lastCommitDay = today; // No se actualiza aquí, solo cuando se hace un commit real
-
-    try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
+    // No tocar _lastCommitDay aquí: se actualiza en commitVisitas()
+    guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
     // No commitear a GitHub inmediatamente, se hará al cambiar el día o al cerrar el servidor.
 
     // 204 No Content es suficiente para el front; si prefieres JSON, cambia a 200 con payload

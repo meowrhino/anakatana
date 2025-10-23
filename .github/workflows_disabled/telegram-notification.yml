@@ -1,0 +1,63 @@
+name: Notificación de Nuevo Pedido a Telegram
+
+on: 
+  push:
+    branches: 
+      - main # o la rama principal de tu repositorio
+    paths:
+      - 'data/registro.json'
+
+jobs:
+  send_telegram_notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Construir mensaje para Telegram
+        id: build_message
+        run: |
+          # Asegúrate de que jq esté instalado
+          sudo apt-get update && sudo apt-get install -y jq
+
+          # Extraer el último pedido de registro.json
+          LAST_ORDER=$(jq '.[-1]' data/registro.json)
+
+          # Formatear el mensaje para Telegram
+          ORDER_ID=$(echo "$LAST_ORDER" | jq -r '.id')
+          ORDER_DATE=$(echo "$LAST_ORDER" | jq -r '.fecha')
+          CUSTOMER_EMAIL=$(echo "$LAST_ORDER" | jq -r '.direccion.email // .email // ""')
+          TOTAL=$(echo "$LAST_ORDER" | jq -r '.total')
+          SHIPPING=$(echo "$LAST_ORDER" | jq -r '.precioEnvio')
+          COMMISSION=$(echo "$LAST_ORDER" | jq -r '.precioComision')
+
+          PRODUCTS_TEXT=""
+          while IFS= read -r line; do
+            PRODUCTS_TEXT+="$line\n"
+          done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "- \(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
+
+          MESSAGE="*🎉 Nuevo Pedido #${ORDER_ID} en Ana Katana 🎉*\n"
+          MESSAGE+="*Fecha:* ${ORDER_DATE}\n"
+          MESSAGE+="*Email Cliente:* ${CUSTOMER_EMAIL}\n"
+          MESSAGE+="*Total:* €${TOTAL}\n"
+          MESSAGE+="*Envío:* €${SHIPPING}\n"
+          MESSAGE+="*Comisión:* €${COMMISSION}\n\n"
+          MESSAGE+="*Productos:*\n${PRODUCTS_TEXT}"
+
+          # Escapar caracteres especiales para JSON
+          ESCAPED_MESSAGE=$(echo "$MESSAGE" | jq -Rs .)
+
+          echo "MESSAGE=$ESCAPED_MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Enviar notificación a Telegram
+        run: |
+          curl -s -X POST \
+            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}",
+              "text": ${{ steps.build_message.outputs.MESSAGE }},
+              "parse_mode": "Markdown"
+            }'
+
+
