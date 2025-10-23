@@ -36,10 +36,11 @@ jobs:
           done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "👗 \(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
 
           # Construcción del mensaje final con el formato deseado
-          MESSAGE="📦 Pedido #${ORDER_ID} recibido\n"
+          MESSAGE="📦 Pedido #${ORDER_ID} recibido"
+          MESSAGE+=$'\n' # Salto de línea
           MESSAGE+="${PRODUCTS_TEXT}"
           MESSAGE+=$'\n' # Salto de línea
-          MESSAGE+="💰 Total: €${TOTAL}\n"
+          MESSAGE+="💰 Total: €${TOTAL}"
           MESSAGE+=$'\n' # Salto de línea
           MESSAGE+="✉️ Cliente: ${CUSTOMER_EMAIL}"
 
