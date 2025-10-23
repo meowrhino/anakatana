@@ -271,8 +271,8 @@ function abrirCarrito() {
       item.nombre
     }</a>        <p class="carrito-detalles">${item.talla || ""}</p>
         <p class="carrito-precio">${(item.precio * item.cantidad).toFixed(
-      2
-    )}€</p>
+          2
+        )}€</p>
       </div>
       <button class="carrito-eliminar">✕</button>
     `;
@@ -292,7 +292,7 @@ function abrirCarrito() {
   // Bloque promo NL (10% descuento) + input email + checkbox
   const promoNL = document.createElement("div");
   promoNL.className = "carrito-nl";
-  const savedNL = (localStorage.getItem("nl_email") || "").trim().toLowerCase();
+  const savedNL = (localStorage.getItem('nl_email') || '').trim().toLowerCase();
   promoNL.innerHTML = `
     <div class="carrito-nl-box">
       <p class="carrito-nl-text">¿Quieres <strong>10% de descuento</strong> en los productos? Suscríbete a la newsletter.</p>
@@ -307,230 +307,183 @@ function abrirCarrito() {
   `;
 
   // Botones de acción alineados: SUSCRIBIRME (izq) + IR AL PAGO (dcha)
-  const actions = document.createElement("div");
-  actions.className = "carrito-actions";
-  actions.innerHTML = `
-    <button class="btn-suscribir-nl">Suscribirme</button>
-    <button class="carrito-pagar" type="button">Ir al pago</button>
-  `;
+  const actions = document.createElement('div');
+  actions.className = 'carrito-actions';
 
-  modal.appendChild(promoNL);
-  modal.appendChild(actions);
+  const btnNL = document.createElement('button');
+  btnNL.id = 'btn-nl-suscribir';
+  btnNL.type = 'button';
+  btnNL.className = 'btn-nl';
+  btnNL.textContent = 'suscribirme';
 
-  // 5) Monta en el DOM
+  const btnPagar = document.createElement("button");
+  btnPagar.className = "carrito-pagar";
+  btnPagar.textContent = "IR AL PAGO";
+  btnPagar.addEventListener("click", () => {
+    window.location.href = "checkout.html";
+  });
+
+  actions.append(btnNL, btnPagar);
+
+  // Lógica de suscripción desde el carrito (con pre-chequeo)
+  const nlInput = promoNL.querySelector('#nl-input-carrito');
+  const nlCheckModal = promoNL.querySelector('#nl-check-modal');
+  function updateNLState(){
+    const hasMail = (nlInput.value || '').trim().toLowerCase().length > 3;
+    btnNL.classList.toggle('is-disabled', !hasMail);
+    btnNL.disabled = !hasMail;
+  }
+  updateNLState();
+  nlInput.addEventListener('input', updateNLState);
+
+  async function markAsSubscribed(email){
+    btnNL.textContent = 'ya suscrita';
+    btnNL.classList.add('is-disabled');
+    btnNL.disabled = true;
+    localStorage.setItem('nl_email', email);
+    if (nlCheckModal) nlCheckModal.checked = true;
+  }
+
+  async function nlSubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      localStorage.setItem('nl_email', email.trim().toLowerCase());
+    } catch(_){}
+  }
+  async function nlUnsubscribe(email){
+    if (!email) return;
+    try {
+      await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`, { method: 'DELETE' });
+    } catch(_){}
+    localStorage.removeItem('nl_email');
+  }
+
+  // si ya hay un email guardado, comprobar en el back (async IIFE)
+  if ((savedNL || '').length > 3) {
+    (async () => {
+      try {
+        const chk = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(savedNL)}`).then(r=>r.json());
+        if (chk && chk.suscrito) await markAsSubscribed(savedNL);
+        if (chk && chk.suscrito && nlCheckModal) nlCheckModal.checked = true;
+      } catch (_) {}
+    })();
+  }
+
+  btnNL.addEventListener('click', async () => {
+    const email = (nlInput.value || '').trim().toLowerCase();
+    if (!email) return;
+
+    // Pre-chequeo en backend para evitar duplicados
+    try {
+      const chk = await fetch(`${window.API_BASE}/newsletter/${encodeURIComponent(email)}`).then(r=>r.json());
+      if (chk && chk.suscrito) return markAsSubscribed(email);
+    } catch (_) {}
+
+    try {
+      const r = await fetch(`${window.API_BASE}/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'error');
+      // feedback mínimo
+      btnNL.textContent = '¡suscrita!';
+      await new Promise(res=>setTimeout(res, 1000));
+      await markAsSubscribed(email);
+      if (nlCheckModal) nlCheckModal.checked = true;
+    } catch (e) {
+      console.warn('No se pudo suscribir ahora');
+    }
+  });
+
+  nlCheckModal?.addEventListener('change', async () => {
+    const em = ((nlInput?.value) || localStorage.getItem('nl_email') || '').trim().toLowerCase();
+    if (!em){
+      nlCheckModal.checked = false; // sin email no podemos tocar backend
+      return;
+    }
+    if (nlCheckModal.checked) {
+      await nlSubscribe(em);
+      await markAsSubscribed(em);
+    } else {
+      await nlUnsubscribe(em);
+      // reset del botón por si estaba en “ya suscrita”
+      btnNL.textContent = 'suscribirme';
+      btnNL.classList.remove('is-disabled');
+      btnNL.disabled = false;
+    }
+  });
+
+  modal.append(promoNL, actions);
+
+
+  // 7) montar en DOM
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-
-  // 6) Listeners para la interacción del carrito
-  const nlInput = document.getElementById("nl-input-carrito");
-  const nlCheck = document.getElementById("nl-check-modal");
-  const btnSuscribir = modal.querySelector(".btn-suscribir-nl");
-  const btnPagar = modal.querySelector(".carrito-pagar");
-
-  // Carga el estado del checkbox desde localStorage
-  nlCheck.checked = localStorage.getItem("nl_checked") === "true";
-
-  // Función para recalcular y renderizar totales
-  function renderTotales() {
-    const { subtotal, pesoTotal, envio, comision, total } = window.recalcularTotales(
-      carrito,
-      zonaSeleccionada
-    );
-
-    const totalesHTML = `
-      <div class="carrito-totales">
-        <p>Subtotal: <span>${subtotal.toFixed(2)}€</span></p>
-        <p>Envío (${LABELS_ZONA[zonaSeleccionada] || ""}): <span>${envio.toFixed(2)}€</span></p>
-        <p>Comisión: <span>${comision.toFixed(2)}€</span></p>
-        <p class="total">Total: <span>${total.toFixed(2)}€</span></p>
-      </div>
-    `;
-    // Si ya existe, lo reemplaza. Si no, lo inserta antes de los botones.
-    const existingTotales = modal.querySelector(".carrito-totales");
-    if (existingTotales) {
-      existingTotales.outerHTML = totalesHTML;
-    } else {
-      actions.insertAdjacentHTML("beforebegin", totalesHTML);
-    }
-  }
-
-  // Listener para el selector de zona
-  const selectZona = document.createElement("select");
-  selectZona.id = "select-zona-envio";
-  selectZona.className = "select-zona-envio";
-  for (const [key, value] of Object.entries(LABELS_ZONA)) {
-    const option = document.createElement("option");
-    option.value = key;
-    option.textContent = value;
-    selectZona.appendChild(option);
-  }
-  selectZona.value = zonaSeleccionada; // Selecciona la zona guardada
-
-  selectZona.addEventListener("change", (e) => {
-    zonaSeleccionada = e.target.value;
-    localStorage.setItem("zonaSeleccionada", zonaSeleccionada);
-    renderTotales();
-  });
-  // Insertar selector de zona antes de los totales
-  actions.insertAdjacentElement("beforebegin", selectZona);
-
-  // Listener para el checkbox NL
-  nlCheck.addEventListener("change", () => {
-    localStorage.setItem("nl_checked", nlCheck.checked);
-    renderTotales();
-  });
-
-  // Listener para el botón Suscribirme
-  btnSuscribir.addEventListener("click", async () => {
-    const email = nlInput.value.trim();
-    if (!email) {
-      alert("Por favor, introduce un email válido.");
-      return;
-    }
-    try {
-      const res = await fetch(`${window.API_BASE}/newsletter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        alert("¡Gracias por suscribirte! Recibirás tu descuento pronto.");
-        localStorage.setItem("nl_email", email);
-        // Deshabilitar input y botón tras suscripción exitosa
-        nlInput.disabled = true;
-        btnSuscribir.disabled = true;
-      } else {
-        const errorData = await res.json();
-        alert(`Error al suscribirse: ${errorData.error || res.statusText}`);
-      }
-    } catch (error) {
-      console.error("Error suscribiendo a newsletter:", error);
-      alert("Error de conexión al suscribirse.");
-    }
-  });
-
-  // Listener para el botón Ir al pago
-  btnPagar.addEventListener("click", async () => {
-    if (carrito.length === 0) {
-      alert("Tu carrito está vacío. Añade productos antes de ir al pago.");
-      return;
-    }
-    try {
-      // Recalcular totales justo antes de ir al pago para asegurar que son los últimos
-      const { subtotal, pesoTotal, envio, comision, total } = window.recalcularTotales(
-        carrito,
-        zonaSeleccionada
-      );
-
-      const res = await fetch(`${window.API_BASE}/crear-sesion`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          carrito: carrito.map((item) => ({
-            id: item.id,
-            nombre: item.nombre,
-            precio: item.precio,
-            cantidad: item.cantidad,
-            talla: item.talla,
-          })),
-          envio: envio,
-          comision: comision,
-          total: total,
-          email: nlInput.value.trim(), // Email del input de NL
-          descuentoNL: nlCheck.checked ? 0.1 : 0, // 10% si el checkbox está marcado
-          zonaEnvio: zonaSeleccionada,
-        }),
-      });
-
-      if (res.ok) {
-        const { sessionId } = await res.json();
-        window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
-      } else {
-        const errorData = await res.json();
-        alert(`Error al crear la sesión de pago: ${errorData.error || res.statusText}`);
-      }
-    } catch (error) {
-      console.error("Error creando sesión de pago:", error);
-      alert("Error de conexión al intentar ir al pago.");
-    }
-  });
-
-  // Render inicial de totales
-  renderTotales();
 }
 
-// Expone la función globalmente para que otros scripts puedan llamarla
-window.abrirCarrito = abrirCarrito;
-
-// Añadir listener al botón del carrito en el header
-document.addEventListener("DOMContentLoaded", () => {
-  const btnCarrito = document.getElementById("btn-carrito");
-  if (btnCarrito) {
-    btnCarrito.addEventListener("click", abrirCarrito);
+// 3.4. Observer para inicializar contador sólo cuando el DOM esté listo
+const observer = new MutationObserver(() => {
+  const contador = document.getElementById("carrito-count");
+  if (contador) {
+    actualizarContadorCarrito();
+    observer.disconnect();
   }
 });
+observer.observe(document.body, { childList: true, subtree: true });
 
-// === 4. TRACKING DE VISITAS ===
-function trackVisit(pageKey) {
-  fetch(`${window.API_BASE}/visitas`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clave: pageKey }),
-  }).catch((e) => console.error("Error tracking visit:", e));
+function actualizarTotales() {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const zona = document.getElementById("zonaDropdown")?.dataset?.selected || "";
+
+  const { subtotal, envio, comision, total } = window.recalcularTotales(
+    carrito,
+    zona
+  );
+
+  // Calcular número total de ítems (sumando cantidades)
+  const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+  const subtotalEl = document.getElementById("subtotal");
+  const envioEl = document.getElementById("envio");
+  const totalPagoEl = document.getElementById("total-pago");
+  const itemsEl = document.getElementById("total-items");
+
+  if (itemsEl) itemsEl.textContent = totalItems;
+  if (subtotalEl) subtotalEl.textContent = subtotal.toFixed(2) + "€";
+  if (envioEl) envioEl.textContent = envio.toFixed(2) + "€";
+  if (totalPagoEl) totalPagoEl.textContent = total.toFixed(2) + "€";
 }
-window.trackVisit = trackVisit;
 
-// Trackear la visita a la página actual
-document.addEventListener("DOMContentLoaded", () => {
-  const pageKey = document.body.dataset.pageKey || "home"; // Usa un data-attribute en el body o 'home' por defecto
-  trackVisit(pageKey);
-});
+// Exponerla globalmente
+window.actualizarTotales = actualizarTotales;
 
-// === 5. NEWSLETTER (para el footer) ===
-// (este es un duplicado de la lógica del carrito, pero para el footer)
-// Solo si existe el formulario de NL en el footer
-document.addEventListener("DOMContentLoaded", () => {
-  const nlForm = document.getElementById("newsletter-form-footer");
-  if (!nlForm) return;
+// ─── Seguimiento de visitas (auto-hook por página) ───────────────────────────
+(function trackPageView(){
+  try {
+    const pageType = document.body.dataset.pageType || "home";
+    let clave = pageType;
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("id");
 
-  const nlInput = nlForm.querySelector("input[type=\"email\"]");
-  const nlCheck = nlForm.querySelector("input[type=\"checkbox\"]");
-  const nlSubmit = nlForm.querySelector("button[type=\"submit\"]");
-
-  // Carga el estado del checkbox desde localStorage
-  nlCheck.checked = localStorage.getItem("nl_checked_footer") === "true";
-  nlInput.value = localStorage.getItem("nl_email_footer") || "";
-
-  nlCheck.addEventListener("change", () => {
-    localStorage.setItem("nl_checked_footer", nlCheck.checked);
-  });
-
-  nlForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = nlInput.value.trim();
-    if (!email) {
-      alert("Por favor, introduce un email válido.");
-      return;
+    // Acepta "producto" (ES) o "product" (EN) y añade id si está
+    if ((pageType === "producto" || pageType === "product") && id) {
+      clave = `producto_${id}`;
     }
-    try {
-      const res = await fetch(`${window.API_BASE}/newsletter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        alert("¡Gracias por suscribirte! Recibirás tu descuento pronto.");
-        localStorage.setItem("nl_email_footer", email);
-        nlInput.disabled = true;
-        nlSubmit.disabled = true;
-      } else {
-        const errorData = await res.json();
-        alert(`Error al suscribirse: ${errorData.error || res.statusText}`);
-      }
-    } catch (error) {
-      console.error("Error suscribiendo a newsletter:", error);
-      alert("Error de conexión al suscribirse.");
-    }
-  });
-});
 
+    fetch(`${window.API_BASE}/visitas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave })
+    })
+    .then(r => { if (!r.ok) console.warn('[visitas] respuesta no OK', r.status); })
+    .catch(err => console.warn('[visitas] error de red', err));
+  } catch (err) {
+    console.warn('[visitas] error inesperado', err);
+  }
+})();

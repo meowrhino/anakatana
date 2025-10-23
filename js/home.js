@@ -5,7 +5,9 @@ document.addEventListener("DOMContentLoaded", cargarProductos);
 
 async function cargarProductos() {
   // añadimos un parámetro único para evitar caché del navegador
-  const respuesta = await fetch(`${window.API_BASE}/productos`);
+  const respuesta = await fetch(`${window.API_BASE}/productos`, {
+
+  });
   productosHome = await respuesta.json();
 
   // Renderiza inicialmente A→Z
