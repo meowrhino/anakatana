@@ -430,7 +430,10 @@ app.post("/guardar-carrito", async (req, res) => {
         const cant = Number(it.cantidad) || 0;
         if (!Number.isInteger(id) || cant <= 0) return;
         const p = productos.find((x) => Number(x.id) === id);
-        if (!p) { console.warn("⚠️ Producto no encontrado al restar stock:", id); return; }
+        if (!p) {
+          console.warn("⚠️ Producto no encontrado al restar stock:", id);
+          return;
+        }
 
         // Extraer id de talla si viene como cadena tipo "talla 3" o "talla M"
         let tallaKey = null;
@@ -441,7 +444,10 @@ app.post("/guardar-carrito", async (req, res) => {
 
         if (tallaKey) {
           // Asegurar mapa de tallas
-          p.stockByTalla = (p.stockByTalla && typeof p.stockByTalla === 'object') ? p.stockByTalla : {};
+          p.stockByTalla =
+            p.stockByTalla && typeof p.stockByTalla === "object"
+              ? p.stockByTalla
+              : {};
           const k = String(tallaKey);
           const prev = Number(p.stockByTalla[k] ?? 0);
           p.stockByTalla[k] = Math.max(0, prev - cant);
@@ -457,8 +463,10 @@ app.post("/guardar-carrito", async (req, res) => {
           const prev = Number(p.stock) || 0;
           p.stock = Math.max(0, prev - cant);
         }
-     }
-  });      guardarProductos(productos);
+      });
+
+      // Persistir productos actualizados en disco
+      guardarProductos(productos);
       console.log("✅ Stock actualizado tras compra (con tallas)");
     }
   } catch (e) {
@@ -664,7 +672,7 @@ app.post("/visitas", async (req, res) => {
     visitasCache[today] ||= {};
     visitasCache[today][clave] = (visitasCache[today][clave] || 0) + 1;
     // No tocar _lastCommitDay aquí: se actualiza en commitVisitas()
-    guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
+    try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
     // No commitear a GitHub inmediatamente, se hará al cambiar el día o al cerrar el servidor.
 
     // 204 No Content es suficiente para el front; si prefieres JSON, cambia a 200 con payload
