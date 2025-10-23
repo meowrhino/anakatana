@@ -6,6 +6,10 @@
     "checkout": 3
   },
   "2025-10-23": {
-    "home": 4
+    "home": 7,
+    "producto_8": 1,
+    "producto_1": 1,
+    "checkout": 1,
+    "about": 2
   }
 }
