@@ -176,6 +176,24 @@ function leerJSONSeguro(p, fallback) {
 const leerNewsletter = () => leerJSONSeguro(newsletterPath, { suscritos: [] });
 const guardarNewsletter = (obj) => fs.writeFileSync(newsletterPath, JSON.stringify(obj, null, 2), "utf-8");
 
+// Estado de newsletter + commit diferido a GitHub
+let newsletterCache = leerNewsletter();
+let newsletterChanged = false;
+async function commitNewsletter() {
+  if (!newsletterChanged) return;
+  try {
+    await upsertFileOnGitHub(
+      "data/newsletter.json",
+      JSON.stringify(newsletterCache, null, 2),
+      `chore: newsletter update (${new Date().toISOString()})`
+    );
+    newsletterChanged = false;
+    console.log("✅ Newsletter commiteada a GitHub.");
+  } catch (e) {
+    console.error("❌ Fallo al commitear newsletter.json:", e.message || e);
+  }
+}
+
 const leerVisitas = () => leerJSONSeguro(visitasPath, { registros: [] });
 const guardarVisitas = (obj) => fs.writeFileSync(visitasPath, JSON.stringify(obj, null, 2), "utf-8");
 
@@ -576,13 +594,17 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── SEGUIMIENTO DE VISITAS (BUFFERED) ────────────────────────────────────────
 // Variables de cache y estado para visitas
 let visitasCache = leerVisitas();
+let lastCommittedLen = 0; // para evitar commits repetidos con el mismo contenido
 let isFlushing = false;
 const FLUSH_THRESHOLD = 200; // Umbral de eventos para forzar el flush
 const HAS_GH_TOKEN = !!(process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
 
 // Función para sincronizar visitas.json con GitHub
 async function guardarVisitasGitHub() {
-  if (visitasCache.registros.length === 0 || isFlushing || !HAS_GH_TOKEN) return;
+  if (isFlushing || !HAS_GH_TOKEN) return;
+  const len = Array.isArray(visitasCache.registros) ? visitasCache.registros.length : 0;
+  if (len === 0 || len === lastCommittedLen) return; // nada nuevo que subir
+
   isFlushing = true;
   const body = JSON.stringify(visitasCache, null, 2);
   try {
@@ -591,7 +613,8 @@ async function guardarVisitasGitHub() {
       body,
       `chore: sync visits buffer (${new Date().toISOString()})`
     );
-    console.log(`✅ Buffer de visitas commiteado (${visitasCache.registros.length} registros).`);
+    lastCommittedLen = len; // actualizar watermark tras commit exitoso
+    console.log(`✅ Buffer de visitas commiteado (${len} registros).`);
   } catch (e) {
     console.error("GitHub upsert visitas.json falló:", e.message || e);
   } finally {
@@ -612,15 +635,18 @@ if (HAS_GH_TOKEN) {
   visitasInterval = setInterval(guardarVisitasGitHub, 10 * 60 * 1000);
 }
 
-// Función para manejar el cierre del servidor (flush final)
-function onExit() {
-  console.log("SIGTERM recibido. Commiteando buffer de visitas...");
-  if (visitasInterval) clearInterval(visitasInterval);
-  return guardarVisitasGitHub(); // Intenta un commit final
+
+// Manejo de señales para flush y commit pendientes antes de salir
+async function gracefulShutdown(signal) {
+  console.log(`${signal} recibido. Commiteando pendientes...`);
+  try { if (visitasInterval) clearInterval(visitasInterval); } catch {}
+  try { await guardarVisitasGitHub(); } catch (e) { console.error("Flush visitas en shutdown falló:", e); }
+  try { await commitNewsletter(); } catch (e) { console.error("Commit newsletter en shutdown falló:", e); }
+  process.exit(0);
 }
 
-process.on("SIGTERM", onExit);
-process.on("SIGINT", onExit);
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT",  () => gracefulShutdown("SIGINT"));
 
 
 
