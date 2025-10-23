@@ -1,0 +1,94 @@
+name: Visitas - Resumen Diario y Limpieza
+
+on:
+  schedule:
+    # Se ejecuta a las 23:05 UTC (01:05 AM Europe/Madrid en horario de invierno)
+    # Ajusta esto si tu zona horaria es diferente o si cambia el horario de verano.
+    - cron: '5 23 * * *'
+  workflow_dispatch: # Permite ejecutar manualmente
+
+jobs:
+  summarize_and_clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (para correr el script)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Instalar jq (para manipulación de JSON)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Resumir visitas y limpiar archivo
+        id: summarize
+        run: |
+          VISITAS_FILE="data/visitas.json"
+          RESUMEN_FILE="data/visitas_resumen.json"
+
+          # 1. Leer visitas.json. Si no existe o está vacío, salir.
+          if [ ! -f "$VISITAS_FILE" ] || [ "$(jq '.registros | length' $VISITAS_FILE)" -eq 0 ]; then
+            echo "::notice::No hay registros de visitas para resumir. Saltando."
+            echo "summary_needed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # 2. Leer registros y agrupar por fecha y path (suma de contadores)
+          # El script de resumen es más fácil de hacer en Node.js/JS que en jq puro.
+          # Creamos un script temporal para el resumen.
+          cat << 'EOF' > summarize.js
+          const fs = require('fs');
+          const visitas = JSON.parse(fs.readFileSync('data/visitas.json', 'utf8'));
+          const resumen = {};
+
+          // Procesar todos los registros
+          for (const registro of visitas.registros) {
+            const fecha = registro.fecha;
+            const path = registro.path;
+            
+            if (!resumen[fecha]) {
+              resumen[fecha] = {};
+            }
+            
+            // Inicializar o incrementar el contador
+            resumen[fecha][path] = (resumen[fecha][path] || 0) + 1;
+          }
+
+          // Leer el resumen anterior si existe para no sobrescribir
+          let resumenFinal = {};
+          try {
+            resumenFinal = JSON.parse(fs.readFileSync('data/visitas_resumen.json', 'utf8'));
+          } catch (e) {
+            // Ignorar si el archivo no existe
+          }
+
+          // Fusionar el nuevo resumen con el resumen final
+          for (const fecha in resumen) {
+            resumenFinal[fecha] = resumenFinal[fecha] || {};
+            for (const path in resumen[fecha]) {
+              resumenFinal[fecha][path] = (resumenFinal[fecha][path] || 0) + resumen[fecha][path];
+            }
+          }
+
+          // Guardar el resumen final
+          fs.writeFileSync('data/visitas_resumen.json', JSON.stringify(resumenFinal, null, 2), 'utf8');
+
+          // Vaciar visitas.json
+          fs.writeFileSync('data/visitas.json', JSON.stringify({ registros: [] }, null, 2), 'utf8');
+          
+          console.log("Resumen y limpieza completados.");
+          EOF
+          
+          node summarize.js
+          echo "summary_needed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit y Push de los archivos resumidos y limpios
+        if: steps.summarize.outputs.summary_needed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(visits): Resumen diario de visitas y limpieza de buffer'
+          file_pattern: 'data/visitas.json data/visitas_resumen.json'
+          # Usar el token de GitHub Actions
+          token: ${{ secrets.GITHUB_TOKEN }}

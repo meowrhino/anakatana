@@ -573,34 +573,55 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── NEWSLETTER (commit diferido) ─────────────────────────────────────────────
 
 
-// ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+// ─── SEGUIMIENTO DE VISITAS (BUFFERED) ────────────────────────────────────────
 // Variables de cache y estado para visitas
 let visitasCache = leerVisitas();
+let isFlushing = false;
+const FLUSH_THRESHOLD = 200; // Umbral de eventos para forzar el flush
+const HAS_GH_TOKEN = !!(process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
 
 // Función para sincronizar visitas.json con GitHub
 async function guardarVisitasGitHub() {
+  if (visitasCache.registros.length === 0 || isFlushing || !HAS_GH_TOKEN) return;
+  isFlushing = true;
   const body = JSON.stringify(visitasCache, null, 2);
   try {
-    // El upsertFileOnGitHub ya tiene lógica de reintento para el 409 (conflicto)
     await upsertFileOnGitHub(
       "data/visitas.json",
       body,
-      `chore: add new visit record (${new Date().toISOString()})`
+      `chore: sync visits buffer (${new Date().toISOString()})`
     );
-    console.log(`✅ Nueva visita commiteada.`);
+    console.log(`✅ Buffer de visitas commiteado (${visitasCache.registros.length} registros).`);
   } catch (e) {
     console.error("GitHub upsert visitas.json falló:", e.message || e);
+  } finally {
+    isFlushing = false;
   }
 }
 
-// Función para manejar el cierre del servidor (la lógica de commit ya no es necesaria)
+// Función para intentar el flush (llamada por timer y umbral)
+function tryFlush() {
+  if (visitasCache.registros.length >= FLUSH_THRESHOLD) {
+    guardarVisitasGitHub();
+  }
+}
+
+// Flush periódico de visitas (cada 10 minutos)
+let visitasInterval;
+if (HAS_GH_TOKEN) {
+  visitasInterval = setInterval(guardarVisitasGitHub, 10 * 60 * 1000);
+}
+
+// Función para manejar el cierre del servidor (flush final)
 function onExit() {
-  console.log("SIGTERM recibido. Cerrando...");
-  return Promise.resolve();
+  console.log("SIGTERM recibido. Commiteando buffer de visitas...");
+  if (visitasInterval) clearInterval(visitasInterval);
+  return guardarVisitasGitHub(); // Intenta un commit final
 }
 
 process.on("SIGTERM", onExit);
 process.on("SIGINT", onExit);
+
 
 
 // POST /visitas  body: {clave: "home" | "producto_T02" | ...}
@@ -631,8 +652,8 @@ app.post("/visitas", async (req, res) => {
     // Guardar localmente (para persistencia en el servidor)
     try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
 
-    // Commitear inmediatamente a GitHub (sin await para no bloquear la respuesta)
-    guardarVisitasGitHub();
+    // Intentar flush si se alcanza el umbral
+    tryFlush(); 
 
     res.json({ ok: true });
   } catch (err) {
@@ -640,6 +661,7 @@ app.post("/visitas", async (req, res) => {
     res.status(500).json({ error: "error interno" });
   }
 });
+
 
 
 // GET /visitas -> objeto completo (opcionalment se puede proteger)
