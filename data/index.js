@@ -176,7 +176,7 @@ function leerJSONSeguro(p, fallback) {
 const leerNewsletter = () => leerJSONSeguro(newsletterPath, { suscritos: [] });
 const guardarNewsletter = (obj) => fs.writeFileSync(newsletterPath, JSON.stringify(obj, null, 2), "utf-8");
 
-const leerVisitas = () => leerJSONSeguro(visitasPath, { _lastCommitDay: null });
+const leerVisitas = () => leerJSONSeguro(visitasPath, { registros: [] });
 const guardarVisitas = (obj) => fs.writeFileSync(visitasPath, JSON.stringify(obj, null, 2), "utf-8");
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -573,118 +573,78 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── NEWSLETTER (commit diferido) ─────────────────────────────────────────────
 
 
-    // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+  // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+// Variables de cache y estado para visitas
+let visitasCache = leerVisitas();
 
-    // Variables de cache y estado para visitas
-    let visitasCache = leerVisitas();
-    let lastCommitDay = visitasCache._lastCommitDay;
+// Función simplificada para commitear el archivo visitas.json
+async function commitVisitas() {
+  const body = JSON.stringify(visitasCache, null, 2);
+  try {
+    // El upsertFileOnGitHub ya tiene lógica de reintento para el 409 (conflicto)
+    await upsertFileOnGitHub(
+      "data/visitas.json",
+      body,
+      `chore: add new visit record (${new Date().toISOString()})`
+    );
+    console.log(`✅ Nueva visita commiteada.`);
+  } catch (e) {
+    console.error("GitHub upsert visitas.json falló:", e.message || e);
+  }
+}
 
-    // Variables de cache y estado para newsletter
-    let newsletterCache = leerNewsletter();
-    let newsletterChanged = false;
+// Función para manejar el cierre del servidor (la lógica de commit ya no es necesaria)
+function onExit() {
+  console.log("SIGTERM recibido. Cerrando...");
+  return Promise.resolve();
+}
 
-    async function commitNewsletter() {
-      if (!newsletterChanged) return;
-      const body = JSON.stringify(newsletterCache, null, 2);
-      try {
-        await upsertFileOnGitHub(
-          "data/newsletter.json",
-          body,
-          `chore: newsletter update (${new Date().toISOString()})`
-        );
-        newsletterChanged = false;
-        console.log(`✅ Newsletter commiteada.`);
-      } catch (e) {
-        console.error("GitHub upsert newsletter.json falló:", e.message || e);
-      }
-    }
+process.on("SIGTERM", onExit);
+process.on("SIGINT", onExit);
 
-    function getTodayISO() {
-      return new Date().toISOString().slice(0, 10);
-    }
+// El flush periódico ya no es necesario con el nuevo esquema de commit inmediato.
+// const visitasInterval = setInterval(() => {}, 10 * 60 * 1000);
 
-    async function commitVisitas(dayToCommit) {
-      if (!dayToCommit || !visitasCache[dayToCommit]) return;
-      const body = JSON.stringify(visitasCache, null, 2);
-      try {
-        await upsertFileOnGitHub(
-          "data/visitas.json",
-          body,
-          `chore: visitas resumen ${dayToCommit} (${new Date().toISOString()})`
-        );
-        visitasCache._lastCommitDay = dayToCommit;
-        guardarVisitas(visitasCache);
-        console.log(`✅ Visitas del día ${dayToCommit} commiteadas.`);
-      } catch (e) {
-        console.error("GitHub upsert visitas.json falló:", e.message || e);
-      }
-    }
-
-
-
-    // Función para manejar el cierre del servidor y commitear visitas pendientes
-    process.on("SIGTERM", async () => {
-      console.log("SIGTERM recibido. Commiteando visitas pendientes...");
-      clearInterval(visitasInterval);
-      const today = getTodayISO();
-      if (visitasCache[today] && visitasCache._lastCommitDay !== today) {
-        await commitVisitas(today);
-      }
-      if (newsletterChanged) {
-        await commitNewsletter();
-      }
-      process.exit(0);
-    });
-
-    // Flush periódico de visitas (cada 10 minutos)
-    const visitasInterval = setInterval(async () => {
-      const today = getTodayISO();
-      // Si hay visitas del día anterior pendientes de commit
-      if (lastCommitDay && today !== lastCommitDay) {
-        await commitVisitas(lastCommitDay);
-        lastCommitDay = today; // Actualizar la variable local lastCommitDay para el nuevo día
-      }
-      // Si hay visitas del día actual pendientes de commit y no se han commiteado hoy
-      if (visitasCache[today] && visitasCache._lastCommitDay !== today) {
-        await commitVisitas(today);
-      }
-    }, 10 * 60 * 1000); // 10 minutos
 
     
 // POST /visitas  body: {clave: "home" | "producto_T02" | ...}
 app.post("/visitas", async (req, res) => {
+  const clave = String(req.body?.clave || "").trim();
+  if (!clave) return res.status(400).json({ error: "clave requerida" });
+
+  const now = new Date();
+  // Generar ID basado en marca de tiempo con milisegundos
+  const id = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(now.getMilliseconds()).padStart(3, '0')}`;
+
   try {
-    let clave = String(req.body?.clave || "").trim();
-    if (!clave) return res.status(400).json({ error: "clave requerida" });
-    clave = clave.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
+    // Crear el nuevo objeto de registro de visita
+    const newVisitRecord = {
+      id: id,
+      fecha: now.toISOString().slice(0, 10), // Solo fecha
+      path: clave, // La clave de visita (home, producto_X, etc.)
+    };
 
-    const today = getTodayISO();
-
-    if (lastCommitDay && today !== lastCommitDay) {
-      // Si es un nuevo día, commitear las visitas del día anterior
-      await commitVisitas(lastCommitDay);
-      lastCommitDay = today; // Actualizar la variable local lastCommitDay para el nuevo día
-      // Reiniciar el cache para el nuevo día si no se hizo commit antes
-      if (!visitasCache[today]) {
-        // visitasCache = { _lastCommitDay: today }; // <-- eliminado
-      }
+    // Asegurar que 'registros' sea un array
+    if (!Array.isArray(visitasCache.registros)) {
+      visitasCache.registros = [];
     }
 
-    visitasCache[today] ||= {};
-    visitasCache[today][clave] = (visitasCache[today][clave] || 0) + 1;
-    // visitasCache._lastCommitDay = today; // <-- eliminado
-    // visitasCache._lastCommitDay = today; // No se actualiza aquí, solo cuando se hace un commit real
+    // Agregar el nuevo registro al array
+    visitasCache.registros.push(newVisitRecord);
 
+    // Guardar localmente (para persistencia en el servidor)
     try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
-    // No commitear a GitHub inmediatamente, se hará al cambiar el día o al cerrar el servidor.
 
-    // 204 No Content es suficiente para el front; si prefieres JSON, cambia a 200 con payload
-    return res.sendStatus(204);
+    // Commitear inmediatamente a GitHub
+    commitVisitas(); // No es necesario esperar (await) para responder al cliente
+
+    res.json({ ok: true });
   } catch (err) {
     console.error("/visitas error:", err);
-    return res.status(500).json({ error: "internal" });
+    res.status(500).json({ error: "error interno" });
   }
 });
+
 
 // GET /visitas -> objeto completo (opcionalment se puede proteger)
 app.get("/visitas", (_req, res) => {
