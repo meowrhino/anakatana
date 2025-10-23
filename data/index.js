@@ -618,6 +618,8 @@ async function guardarVisitasGitHub() {
       `chore: sync visits buffer (${new Date().toISOString()})`
     );
     console.log(`✅ Buffer de visitas commiteado (${visitasCache.registros.length} registros).`);
+    // Recordar cuántos registros había en el último commit para evitar commits repetidos
+    lastCommittedLen = len;
   } catch (e) {
 
     console.error("GitHub upsert visitas.json falló:", e.message || e);
