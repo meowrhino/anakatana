@@ -37,27 +37,22 @@ jobs:
           done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "- \(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
 
           MESSAGE="*🎉 Nuevo Pedido #${ORDER_ID} en Ana Katana 🎉*\n"
-          MESSAGE+="*Fecha:* ${ORDER_DATE}\n"
-          MESSAGE+="*Email Cliente:* ${CUSTOMER_EMAIL}\n"
-          MESSAGE+="*Total:* €${TOTAL}\n"
-          MESSAGE+="*Envío:* €${SHIPPING}\n"
-          MESSAGE+="*Comisión:* €${COMMISSION}\n\n"
-          MESSAGE+="*Productos:*\n${PRODUCTS_TEXT}"
+          MESSAGE+="*📅 Fecha:* ${ORDER_DATE}\n"
+          MESSAGE+="*📧 Cliente:* ${CUSTOMER_EMAIL}\n"
+          MESSAGE+="*💰 Total:* €${TOTAL}\n"
+          MESSAGE+="*🚚 Envío:* €${SHIPPING}\n"
+          MESSAGE+="*💸 Comisión:* €${COMMISSION}\n\n"
+          MESSAGE+="*📦 Productos:*\n${PRODUCTS_TEXT}"
 
-          # Escapar caracteres especiales para JSON
-          ESCAPED_MESSAGE=$(echo "$MESSAGE" | jq -Rs .)
-
-          echo "MESSAGE=$ESCAPED_MESSAGE" >> $GITHUB_OUTPUT
+          # Usar un delimitador para pasar el mensaje multi-línea
+          echo "MESSAGE<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Enviar notificación a Telegram
         run: |
           curl -s -X POST \
             https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
-            -H 'Content-Type: application/json' \
-            -d '{
-              "chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}",
-              "text": ${{ steps.build_message.outputs.MESSAGE }},
-              "parse_mode": "Markdown"
-            }'
-
-
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${{ steps.build_message.outputs.MESSAGE }}" \
+            -d parse_mode="Markdown"
