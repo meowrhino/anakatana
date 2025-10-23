@@ -606,6 +606,10 @@ async function guardarVisitasGitHub() {
   if (len === 0 || len === lastCommittedLen) return; // nada nuevo que subir
 
   isFlushing = true;
+  
+  // AÑADIR ESTA LÍNEA: Ordenar el array por ID (marca de tiempo)
+  visitasCache.registros.sort((a, b) => a.id.localeCompare(b.id)); 
+  
   const body = JSON.stringify(visitasCache, null, 2);
   try {
     await upsertFileOnGitHub(
@@ -613,9 +617,9 @@ async function guardarVisitasGitHub() {
       body,
       `chore: sync visits buffer (${new Date().toISOString()})`
     );
-    lastCommittedLen = len; // actualizar watermark tras commit exitoso
-    console.log(`✅ Buffer de visitas commiteado (${len} registros).`);
+    console.log(`✅ Buffer de visitas commiteado (${visitasCache.registros.length} registros).`);
   } catch (e) {
+
     console.error("GitHub upsert visitas.json falló:", e.message || e);
   } finally {
     isFlushing = false;
