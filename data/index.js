@@ -594,7 +594,8 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── SEGUIMIENTO DE VISITAS (BUFFERED) ────────────────────────────────────────
 // Variables de cache y estado para visitas
 let visitasCache = leerVisitas();
-let lastCommittedLen = 0; // para evitar commits repetidos con el mismo contenido
+// Inicializa lastCommittedLen con el tamaño actual del buffer para evitar un commit "fantasma" tras reinicio
+let lastCommittedLen = Array.isArray(visitasCache.registros) ? visitasCache.registros.length : 0;
 let isFlushing = false;
 const FLUSH_THRESHOLD = 200; // Umbral de eventos para forzar el flush
 const HAS_GH_TOKEN = !!(process.env.GH_TOKEN || process.env.GITHUB_TOKEN);

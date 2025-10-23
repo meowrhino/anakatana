@@ -4,7 +4,7 @@ on:
   schedule:
     # Se ejecuta a las 23:05 UTC (01:05 AM Europe/Madrid en horario de invierno)
     # Ajusta esto si tu zona horaria es diferente o si cambia el horario de verano.
-    - cron: '5 23 * * *'
+    - cron: '5 1 * * *' # 01:05 UTC → 03:05 Europe/Madrid
   workflow_dispatch: # Permite ejecutar manualmente
 
   
@@ -17,6 +17,12 @@ jobs:
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
+
+      - name: Asegurar que la rama está actualizada
+        run: |
+          git fetch origin main
+          git checkout main
+          git pull origin main --rebase
 
       - name: Configurar Node.js (para correr el script)
         uses: actions/setup-node@v4
@@ -96,8 +102,7 @@ jobs:
           file_pattern: |
             data/visitas.json
             data/visitas_resumen.json
-          # AÑADIR ESTA LÍNEA: Forzar el push para evitar non-fast-forward
-          force_push: true 
-          # Usar el token de GitHub Actions
-          token: ${{ secrets.GITHUB_TOKEN }}
+          push_options: '--force-with-lease'
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
 
