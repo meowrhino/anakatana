@@ -93,9 +93,11 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore(visits): Resumen diario de visitas y limpieza de buffer'
-          # Corrección de la sintaxis YAML para el file_pattern
           file_pattern: |
             data/visitas.json
             data/visitas_resumen.json
+          # AÑADIR ESTA LÍNEA: Forzar el push para evitar non-fast-forward
+          force_push: true 
           # Usar el token de GitHub Actions
           token: ${{ secrets.GITHUB_TOKEN }}
+
