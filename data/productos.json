@@ -338,12 +338,12 @@
       }
     ],
     "stockByTalla": {
-      "1": 2
+      "1": 1
     },
     "tallaModelo": 1,
     "rebajas": "no",
     "precioRebajas": "",
-    "stock": 2,
+    "stock": 1,
     "soldOut": "no"
   }
 ]
