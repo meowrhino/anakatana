@@ -7,6 +7,10 @@ on:
     - cron: '5 23 * * *'
   workflow_dispatch: # Permite ejecutar manualmente
 
+  
+permissions:
+    contents: write
+
 jobs:
   summarize_and_clean:
     runs-on: ubuntu-latest
