@@ -573,12 +573,12 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── NEWSLETTER (commit diferido) ─────────────────────────────────────────────
 
 
-  // ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
+// ─── SEGUIMIENTO DE VISITAS ───────────────────────────────────────────────────
 // Variables de cache y estado para visitas
 let visitasCache = leerVisitas();
 
-// Función simplificada para commitear el archivo visitas.json
-async function commitVisitas() {
+// Función para sincronizar visitas.json con GitHub
+async function guardarVisitasGitHub() {
   const body = JSON.stringify(visitasCache, null, 2);
   try {
     // El upsertFileOnGitHub ya tiene lógica de reintento para el 409 (conflicto)
@@ -602,11 +602,7 @@ function onExit() {
 process.on("SIGTERM", onExit);
 process.on("SIGINT", onExit);
 
-// El flush periódico ya no es necesario con el nuevo esquema de commit inmediato.
-// const visitasInterval = setInterval(() => {}, 10 * 60 * 1000);
 
-
-    
 // POST /visitas  body: {clave: "home" | "producto_T02" | ...}
 app.post("/visitas", async (req, res) => {
   const clave = String(req.body?.clave || "").trim();
@@ -635,8 +631,8 @@ app.post("/visitas", async (req, res) => {
     // Guardar localmente (para persistencia en el servidor)
     try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
 
-    // Commitear inmediatamente a GitHub
-    commitVisitas(); // No es necesario esperar (await) para responder al cliente
+    // Commitear inmediatamente a GitHub (sin await para no bloquear la respuesta)
+    guardarVisitasGitHub();
 
     res.json({ ok: true });
   } catch (err) {
