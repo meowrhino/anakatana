@@ -17,12 +17,21 @@ jobs:
       - name: Construir mensaje para Telegram
         id: build_message
         run: |
-          # ... (código anterior) ...
+          # Asegúrate de que jq esté instalado
+          sudo apt-get update && sudo apt-get install -y jq
+
+          # Extraer el último pedido de registro.json
+          LAST_ORDER=$(jq '.[-1]' data/registro.json)
+          ORDER_ID=$(echo "$LAST_ORDER" | jq -r '.id')
+          CUSTOMER_EMAIL=$(echo "$LAST_ORDER" | jq -r '.direccion.email')
+          TOTAL=$(echo "$LAST_ORDER" | jq -r '.total')
 
           # ----------------------------------------------------------------------
-          # CAMBIO: Simplificación del mensaje para Telegram
+          # CAMBIO: Bucle corregido para acumular productos y formato simplificado
           # ----------------------------------------------------------------------
           PRODUCTS_TEXT=""
+          while read -r line; do
+            PRODUCTS_TEXT+="$line"$'\n'
           done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "\(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
 
           MESSAGE="*📦 Pedido #${ORDER_ID} recibido en Ana Katana 📦*\n\n"
@@ -34,6 +43,7 @@ jobs:
           echo "MESSAGE<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
       - name: Enviar notificación a Telegram
         run: |
