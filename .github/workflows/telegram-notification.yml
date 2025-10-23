@@ -27,22 +27,27 @@ jobs:
           TOTAL=$(echo "$LAST_ORDER" | jq -r '.total')
 
           # ----------------------------------------------------------------------
-          # CAMBIO: Bucle corregido para acumular productos y formato simplificado
+          # CAMBIO: Bucle corregido y formato final con saltos de línea explícitos
           # ----------------------------------------------------------------------
           PRODUCTS_TEXT=""
+          # Usamos un bucle para acumular los productos
           while read -r line; do
             PRODUCTS_TEXT+="$line"$'\n'
-          done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "\(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
+          done < <(echo "$LAST_ORDER" | jq -r '.carrito[] | "👗 \(.nombre)\(if .talla then " (talla " + (.talla|tostring|sub("^talla\\s+";"")) + ")" else "" end) x" + (.cantidad|tostring)')
 
-          MESSAGE="*📦 Pedido #${ORDER_ID} recibido en Ana Katana 📦*\n\n"
-          MESSAGE+="*Productos:*\n"
+          # Construcción del mensaje final con el formato deseado
+          MESSAGE="📦 Pedido #${ORDER_ID} recibido\n"
           MESSAGE+="${PRODUCTS_TEXT}"
-          MESSAGE+="\n\n*Total:* €${TOTAL} | *Cliente:* ${CUSTOMER_EMAIL}"
+          MESSAGE+=$'\n' # Salto de línea
+          MESSAGE+="💰 Total: €${TOTAL}\n"
+          MESSAGE+=$'\n' # Salto de línea
+          MESSAGE+="✉️ Cliente: ${CUSTOMER_EMAIL}"
 
           # Usar un delimitador para pasar el mensaje multi-línea
           echo "MESSAGE<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
 
       - name: Enviar notificación a Telegram
