@@ -1,3 +1,9 @@
 {
-  "registros": []
+  "registros": [
+    {
+      "id": "20251127145116092",
+      "fecha": "2025-11-27",
+      "path": "policy"
+    }
+  ]
 }
