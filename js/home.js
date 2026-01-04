@@ -4,14 +4,46 @@ let productosHome = []; // almacena la lista original
 document.addEventListener("DOMContentLoaded", cargarProductos);
 
 async function cargarProductos() {
-  // añadimos un parámetro único para evitar caché del navegador
-  const respuesta = await fetch(`${window.API_BASE}/productos`, {
+  const loader = document.getElementById('loading-screen');
+  
+  try {
+    // Añadimos un parámetro único para evitar caché del navegador
+    const respuesta = await fetch(`${window.API_BASE}/productos`, {
+      cache: 'no-cache'
+    });
+    
+    if (!respuesta.ok) {
+      throw new Error(`HTTP error! status: ${respuesta.status}`);
+    }
+    
+    productosHome = await respuesta.json();
 
-  });
-  productosHome = await respuesta.json();
-
-  // Renderiza inicialmente A→Z
-  applySort("name-asc");
+    // Renderiza inicialmente A→Z
+    applySort("name-asc");
+    
+    // Ocultar loader después de renderizar (con pequeño delay para suavizar)
+    setTimeout(() => {
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.remove(), 300);
+      }
+    }, 300);
+    
+  } catch (error) {
+    console.error('Error cargando productos:', error);
+    
+    // Mostrar mensaje de error en el loader
+    const loadingText = loader?.querySelector('.loading-text');
+    if (loadingText) {
+      loadingText.textContent = 'Error al cargar productos. Recargando...';
+      loadingText.style.color = '#ff6b6b';
+    }
+    
+    // Reintentar después de 2 segundos
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  }
 }
 
 function renderProductos(productos, contenedor) {

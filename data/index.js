@@ -164,9 +164,8 @@ const leerProductos = () => JSON.parse(fs.readFileSync(dbPath, "utf-8"));
 const guardarProductos = (productos) =>
   fs.writeFileSync(dbPath, JSON.stringify(productos, null, 2), "utf-8");
 
-// ─── Newsletter & Visitas (paths y helpers) ───────────────────────────────────
+// ─── Newsletter (paths y helpers) ────────────────────────────────────────────
 const newsletterPath = path.join(__dirname, "newsletter.json");
-const visitasPath = path.join(__dirname, "visitas.json");
 
 function leerJSONSeguro(p, fallback) {
   try { return JSON.parse(fs.readFileSync(p, "utf-8")); }
@@ -194,8 +193,7 @@ async function commitNewsletter() {
   }
 }
 
-const leerVisitas = () => leerJSONSeguro(visitasPath, { registros: [] });
-const guardarVisitas = (obj) => fs.writeFileSync(visitasPath, JSON.stringify(obj, null, 2), "utf-8");
+
 
 // ───────────────────────────────────────────────────────────────────────────────
 // 4) RUTAS DE CATÁLOGO Y STOCK
@@ -591,116 +589,15 @@ app.delete("/newsletter/:email", async (req, res) => {
 // ─── NEWSLETTER (commit diferido) ─────────────────────────────────────────────
 
 
-// ─── SEGUIMIENTO DE VISITAS (BUFFERED) ────────────────────────────────────────
-// Variables de cache y estado para visitas
-let visitasCache = leerVisitas();
-// Inicializa lastCommittedLen con el tamaño actual del buffer para evitar un commit "fantasma" tras reinicio
-let lastCommittedLen = Array.isArray(visitasCache.registros) ? visitasCache.registros.length : 0;
-let isFlushing = false;
-const FLUSH_THRESHOLD = 200; // Umbral de eventos para forzar el flush
-const HAS_GH_TOKEN = !!(process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
-
-// Función para sincronizar visitas.json con GitHub
-async function guardarVisitasGitHub() {
-  if (isFlushing || !HAS_GH_TOKEN) return;
-  const len = Array.isArray(visitasCache.registros) ? visitasCache.registros.length : 0;
-  if (len === 0 || len === lastCommittedLen) return; // nada nuevo que subir
-
-  isFlushing = true;
-  
-  // AÑADIR ESTA LÍNEA: Ordenar el array por ID (marca de tiempo)
-  visitasCache.registros.sort((a, b) => a.id.localeCompare(b.id)); 
-  
-  const body = JSON.stringify(visitasCache, null, 2);
-  try {
-    await upsertFileOnGitHub(
-      "data/visitas.json",
-      body,
-      `chore: sync visits buffer (${new Date().toISOString()})`
-    );
-    console.log(`✅ Buffer de visitas commiteado (${visitasCache.registros.length} registros).`);
-    // Recordar cuántos registros había en el último commit para evitar commits repetidos
-    lastCommittedLen = len;
-  } catch (e) {
-
-    console.error("GitHub upsert visitas.json falló:", e.message || e);
-  } finally {
-    isFlushing = false;
-  }
-}
-
-// Función para intentar el flush (llamada por timer y umbral)
-function tryFlush() {
-  if (visitasCache.registros.length >= FLUSH_THRESHOLD) {
-    guardarVisitasGitHub();
-  }
-}
-
-// Flush periódico de visitas (cada 10 minutos)
-let visitasInterval;
-if (HAS_GH_TOKEN) {
-  visitasInterval = setInterval(guardarVisitasGitHub, 10 * 60 * 1000);
-}
-
-
-// Manejo de señales para flush y commit pendientes antes de salir
+// Manejo de señales para commit pendientes antes de salir
 async function gracefulShutdown(signal) {
   console.log(`${signal} recibido. Commiteando pendientes...`);
-  try { if (visitasInterval) clearInterval(visitasInterval); } catch {}
-  try { await guardarVisitasGitHub(); } catch (e) { console.error("Flush visitas en shutdown falló:", e); }
   try { await commitNewsletter(); } catch (e) { console.error("Commit newsletter en shutdown falló:", e); }
   process.exit(0);
 }
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT",  () => gracefulShutdown("SIGINT"));
-
-
-
-// POST /visitas  body: {clave: "home" | "producto_T02" | ...}
-app.post("/visitas", async (req, res) => {
-  const clave = String(req.body?.clave || "").trim();
-  if (!clave) return res.status(400).json({ error: "clave requerida" });
-
-  const now = new Date();
-  // Generar ID basado en marca de tiempo con milisegundos
-  const id = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(now.getMilliseconds()).padStart(3, '0')}`;
-
-  try {
-    // Crear el nuevo objeto de registro de visita
-    const newVisitRecord = {
-      id: id,
-      fecha: now.toISOString().slice(0, 10), // Solo fecha
-      path: clave, // La clave de visita (home, producto_X, etc.)
-    };
-
-    // Asegurar que 'registros' sea un array
-    if (!Array.isArray(visitasCache.registros)) {
-      visitasCache.registros = [];
-    }
-
-    // Agregar el nuevo registro al array
-    visitasCache.registros.push(newVisitRecord);
-
-    // Guardar localmente (para persistencia en el servidor)
-    try { guardarVisitas(visitasCache); } catch (e) { console.error("Error guardando visitas.json local:", e); }
-
-    // Intentar flush si se alcanza el umbral
-    tryFlush(); 
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("/visitas error:", err);
-    res.status(500).json({ error: "error interno" });
-  }
-});
-
-
-
-// GET /visitas -> objeto completo (opcionalment se puede proteger)
-app.get("/visitas", (_req, res) => {
-  res.json(visitasCache);
-});
 
 // ───────────────────────────────────────────────────────────────────────────────
 // 7) HEALTHCHECK Y ARRANQUE

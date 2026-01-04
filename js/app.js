@@ -2,7 +2,7 @@ window.API_BASE = window.API_BASE || "https://anakatana-backend.onrender.com";
 // Mini-guard: si por algún motivo no está definida, evita petar y avisa
 if (!window.API_BASE) {
   console.warn("API_BASE no definido; usando fallback local (mismo origen)");
-  window.API_BASE = ""; // fallback relativo ("/visitas", "/newsletter"...)
+  window.API_BASE = ""; // fallback relativo ("/newsletter"...)
 }
 // === 1. ESTADO DEL CARRITO ===
 // Cargar última zona seleccionada de localStorage
@@ -463,27 +463,3 @@ function actualizarTotales() {
 // Exponerla globalmente
 window.actualizarTotales = actualizarTotales;
 
-// ─── Seguimiento de visitas (auto-hook por página) ───────────────────────────
-(function trackPageView(){
-  try {
-    const pageType = document.body.dataset.pageType || "home";
-    let clave = pageType;
-    const url = new URL(window.location.href);
-    const id = url.searchParams.get("id");
-
-    // Acepta "producto" (ES) o "product" (EN) y añade id si está
-    if ((pageType === "producto" || pageType === "product") && id) {
-      clave = `producto_${id}`;
-    }
-
-    fetch(`${window.API_BASE}/visitas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clave })
-    })
-    .then(r => { if (!r.ok) console.warn('[visitas] respuesta no OK', r.status); })
-    .catch(err => console.warn('[visitas] error de red', err));
-  } catch (err) {
-    console.warn('[visitas] error inesperado', err);
-  }
-})();
